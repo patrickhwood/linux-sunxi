@@ -1560,7 +1560,8 @@ static int wemac_phy_read(struct net_device *dev, int phyaddr_unused, int reg)
 	writel(0x1, db->emac_vbase + EMAC_MAC_MCMD_REG);
 	spin_unlock_irqrestore(&db->lock, flags);
 
-	wemac_msleep(db, 1); /* Wait read complete */
+	// wemac_msleep(db, 1); /* Wait read complete */
+	udelay(150);
 
 	/* push down the phy io line and read data */
 	spin_lock_irqsave(&db->lock, flags);
@@ -1593,7 +1594,8 @@ static void wemac_phy_write(struct net_device *dev,
 	writel(0x1, db->emac_vbase + EMAC_MAC_MCMD_REG);
 	spin_unlock_irqrestore(&db->lock, flags);
 
-	wemac_msleep(db, 1);		/* Wait write complete */
+	// wemac_msleep(db, 1);		/* Wait write complete */
+	udelay(150);
 
 	spin_lock_irqsave(&db->lock, flags);
 	/* push down the phy io line */
