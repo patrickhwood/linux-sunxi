@@ -369,7 +369,7 @@ static int ump_file_ioctl(struct inode *inode, struct file *filp, unsigned int c
 			break;
 
 		default:
-			DBG_MSG(1, ("No handler for IOCTL. cmd: 0x%08x, arg: 0x%08lx\n", cmd, arg));
+			// DBG_MSG(1, ("No handler for IOCTL. cmd: 0x%08x, arg: 0x%08lx\n", cmd, arg));
 			err = -EFAULT;
 			break;
 	}
