@@ -902,8 +902,10 @@ static int cedardev_mmap(struct file *filp, struct vm_area_struct *vma)
         /* Set reserved and I/O flag for the area. */
         vma->vm_flags |= VM_RESERVED | VM_IO;
 
-        /* Select uncached access. */
-        //vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+        if (SUNXI_VER_A20 == sw_get_ic_ver()) {
+            /* Select uncached access. */
+            vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+        }
 
         if (remap_pfn_range(vma, vma->vm_start, temp_pfn,
                             vma->vm_end - vma->vm_start, vma->vm_page_prot)) {
