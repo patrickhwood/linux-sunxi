@@ -597,6 +597,8 @@ long cedardev_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 				}else{
 					printk("IOCTL_SET_VE_FREQ set ve freq error,%s,%d\n", __func__, __LINE__);
 				}
+				printk("cedar ioctl: request freq %d, pll4 clk %u, ve clk %u\n",
+					arg_rate, clk_get_rate(ve_pll4clk), clk_get_rate(ve_moduleclk));
 			}
 			break;
         case IOCTL_GETVALUE_AVS2:
@@ -1021,6 +1023,8 @@ static int __init cedardev_init(void)
 		printk("set parent of avs_moduleclk to hosc_clk failed!\n");
 		return -EFAULT;
 	}
+
+	printk("cedar init: pll4 clk %u, ve clk %u\n", clk_get_rate(ve_pll4clk), clk_get_rate(ve_moduleclk));
 
 	/*for clk test*/
 	#ifdef CEDAR_DEBUG
