@@ -1417,7 +1417,7 @@ __s32 NFC_ReadRetry(__u32 chip, __u32 retry_count, __u32 read_retry_type)
 
 			ret =_vender_set_param(&param[0], &read_retry_reg_adr[0], read_retry_reg_num);
 
-    	}
+		}
     }
     else if((read_retry_mode>=0x10)&&(read_retry_mode<0x20))  //for toshiba readretry mode
     {
