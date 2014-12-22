@@ -323,7 +323,6 @@
 				MX6QDL_PAD_NANDF_D1__GPIO2_IO01 0x1b0b0
 				MX6QDL_PAD_NANDF_D2__GPIO2_IO02 0x1b0b0
 				MX6QDL_PAD_NANDF_D3__GPIO2_IO03 0x1b0b0
-				MX6QDL_PAD_GPIO_0__CCM_CLKO1    0x130b0
 				MX6QDL_PAD_NANDF_CLE__GPIO6_IO07 0x1b0b0
 				MX6QDL_PAD_ENET_TXD1__GPIO1_IO29 0x1b0b0
 				MX6QDL_PAD_EIM_D22__GPIO3_IO22  0x1b0b0
@@ -401,7 +400,7 @@
 
 		pinctrl_pcie: pciegrp {
 			fsl,pins = <
-				MX6QDL_PAD_GPIO_17__GPIO7_IO12	0x1b0b0
+				MX6QDL_PAD_GPIO_0__GPIO1_IO00	0x1b0b0
 			>;
 		};
 
@@ -494,7 +493,7 @@
 &pcie {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pcie>;
-	reset-gpio = <&gpio7 12 0>;
+	reset-gpio = <&gpio1 0 0>;
 	status = "okay";
 };
 
