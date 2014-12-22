@@ -6931,8 +6931,12 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	if (!is_valid_ether_addr(netdev->dev_addr)) {
 		dev_err(&pdev->dev, "Invalid MAC Address: %pM\n",
 			netdev->dev_addr);
+		/* PHW
 		err = -EIO;
 		goto err_eeprom;
+		@@@ if the address from EEPROM is corrupted, grab a random one so we can continue
+		*/
+		eth_random_addr(netdev->dev_addr);
 	}
 
 	init_timer(&adapter->watchdog_timer);
