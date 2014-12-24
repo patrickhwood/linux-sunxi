@@ -6935,6 +6935,8 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		err = -EIO;
 		goto err_eeprom;
 		@@@ if the address from EEPROM is corrupted, grab a random one so we can continue
+		@@@ note: must be reset with ifconfig at some later point to register the address
+		@@@ with the underlying MAC
 		*/
 		eth_random_addr(netdev->dev_addr);
 	}
