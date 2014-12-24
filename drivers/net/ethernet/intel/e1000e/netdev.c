@@ -6939,6 +6939,7 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		@@@ with the underlying MAC
 		*/
 		eth_random_addr(netdev->dev_addr);
+		memcpy(adapter->hw.mac.addr, netdev->dev_addr, netdev->addr_len);
 	}
 
 	init_timer(&adapter->watchdog_timer);
