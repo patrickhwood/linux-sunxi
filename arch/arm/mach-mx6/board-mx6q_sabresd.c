@@ -105,7 +105,7 @@
 
 #define SABRESD_SD3_CD		IMX_GPIO_NR(2, 0)
 #define SABRESD_SD3_WP		IMX_GPIO_NR(2, 1)
-#define SABRESD_SD2_CD		IMX_GPIO_NR(2, 2)
+#define SABRESD_SD2_CD		IMX_GPIO_NR(1, 4)
 #define SABRESD_SD2_WP		IMX_GPIO_NR(2, 3)
 #define SABRESD_CHARGE_DOK_B	IMX_GPIO_NR(2, 24)
 #define SABRESD_GPS_RESET	IMX_GPIO_NR(2, 28)
@@ -227,19 +227,16 @@ static const struct esdhc_platform_data mx6q_sabresd_sd2_data __initconst = {
 	.cd_gpio = SABRESD_SD2_CD,
 	.wp_gpio = SABRESD_SD2_WP,
 	.keep_power_at_suspend = 1,
-	.support_8bit = 1,
 	.delay_line = 0,
 	.cd_type = ESDHC_CD_CONTROLLER,
 	.runtime_pm = 1,
 };
 
 static const struct esdhc_platform_data mx6q_sabresd_sd3_data __initconst = {
-	.cd_gpio = SABRESD_SD3_CD,
-	.wp_gpio = SABRESD_SD3_WP,
 	.keep_power_at_suspend = 1,
 	.support_8bit = 1,
 	.delay_line = 0,
-	.cd_type = ESDHC_CD_CONTROLLER,
+	.cd_type = ESDHC_CD_PERMANENT,
 	.runtime_pm = 1,
 };
 
@@ -2037,7 +2034,6 @@ static void __init mx6_sabresd_board_init(void)
 	/* Move sd4 to first because sd4 connect to emmc.
 	   Mfgtools want emmc is mmcblk0 and other sd card is mmcblk1.
 	*/
-	imx6q_add_sdhci_usdhc_imx(3, &mx6q_sabresd_sd4_data);
 	imx6q_add_sdhci_usdhc_imx(2, &mx6q_sabresd_sd3_data);
 	imx6q_add_sdhci_usdhc_imx(1, &mx6q_sabresd_sd2_data);
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
