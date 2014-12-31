@@ -125,14 +125,14 @@ static u32 max11801_dcm_sample_aux(struct i2c_client *client)
 	ret = i2c_smbus_read_i2c_block_data(client, FIFO_RD_AUX_MSB,
 						1, &temp_buf);
 	if (ret < 1)
-		printk(KERN_DEBUG "FIFO_RD_AUX_MSB read fails\n");
+		; // printk(KERN_DEBUG "FIFO_RD_AUX_MSB read fails\n");
 	else
 		aux_buf[0] = temp_buf;
 	mdelay(5);
 	ret = i2c_smbus_read_i2c_block_data(client, FIFO_RD_AUX_LSB,
 						1, &temp_buf);
 	if (ret < 1)
-		printk(KERN_DEBUG "FIFO_RD_AUX_LSB read fails\n");
+		; // printk(KERN_DEBUG "FIFO_RD_AUX_LSB read fails\n");
 	else
 		aux_buf[1] = temp_buf;
 	aux = (aux_buf[0] << 4) +
