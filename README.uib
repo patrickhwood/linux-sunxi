@@ -1,0 +1,41 @@
+These instructions have been tested on Ubuntu 12.04LTS and Ubuntu 14.04LTS.
+Android builds require a 64-bit install, so you should probably just go with
+that from the start.
+
+1. Install git, GCC ARM cross compiler (get gcc 4.7.x, 4.8.x has problems):
+
+  apt-get install git gcc-4.7-arm-linux-gnueabihf
+
+2. Clone this repository:
+
+  git clone git://github.com/patrickhwood/linux.git
+
+3. Go into the uboot subdirectory and checkout the UIB branch:
+
+  cd linux
+  git checkout v3.18-uib
+
+4. Configure build for UIB:
+
+  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- imx_v6_v7_defconfig
+
+5. Build (note: set -jN where N == the number of cores on your CPU):
+
+  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4
+  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4 modules
+  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
+
+6. Set up the configuration.  You can use "make menuconfig" to customize the
+   configuration or simply use config.uib, which is the configuraion I'm
+   currently using to build the kernel with PCIe and Intel GB ethernet support:
+
+  cp config.uib .config
+
+6. Copy arch/arm/boot/zImage (kernel image) and arch/arm/boot/dts/imx6dl-sabresd.dtb
+   (device tree binary) to the first partition on the SD card, which should be
+   formatted FAT32 (vfat on linux); this partition should be very small, as only
+   these two files need to be stored there.  Copy the contents of output/lib to
+   /lib in the linux root partition on the SD card which should be formatted ext3
+   or ext4; this partition can span the rest of the card, or you can create other
+   partitions for swap or home directories if you want.
+
