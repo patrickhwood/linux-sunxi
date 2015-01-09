@@ -127,6 +127,14 @@ static struct fb_videomode ldb_modedb[] = {
 	 0,
 	 FB_VMODE_NONINTERLACED,
 	 FB_MODE_IS_DETAILED,},
+	{
+	 "LDB-WSVGA", 60, 1024, 600, 19531,
+	 100, 100,
+	 10, 10,
+	 120, 15,
+	 FB_SYNC_EXT,
+	 FB_VMODE_NONINTERLACED,
+	 0,},
 };
 static int ldb_modedb_sz = ARRAY_SIZE(ldb_modedb);
 

@@ -1949,6 +1949,9 @@ static void __init mx6_sabresd_board_init(void)
 		mipi_dsi_pdata.ipu_id = 0;
 		mipi_dsi_pdata.disp_id = 1;
 		ldb_data.sec_ipu_id = 0;
+		// UIB
+		ldb_data.mode = LDB_SEP0;
+		sabresd_fb_data[0].mode_str = "LDB-WSVGA";
 	}
 	imx6q_add_mxc_hdmi_core(&hdmi_core_data);
 
