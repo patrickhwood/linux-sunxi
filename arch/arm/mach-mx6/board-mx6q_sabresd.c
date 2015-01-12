@@ -224,15 +224,18 @@ extern bool enet_to_gpio_6;
 static int max17135_regulator_init(struct max17135 *max17135);
 
 static const struct esdhc_platform_data mx6q_sabresd_sd2_data __initconst = {
-	.always_present = 1,
+	.cd_gpio = SABRESD_SD2_CD,
+	.wp_gpio = SABRESD_SD2_WP,
 	.keep_power_at_suspend = 1,
+	.support_8bit = 1,
 	.delay_line = 0,
 	.cd_type = ESDHC_CD_CONTROLLER,
 	.runtime_pm = 1,
 };
 
 static const struct esdhc_platform_data mx6q_sabresd_sd3_data __initconst = {
-	.always_present = 1,
+	.cd_gpio = SABRESD_SD3_CD,
+	.wp_gpio = SABRESD_SD3_WP,
 	.keep_power_at_suspend = 1,
 	.support_8bit = 1,
 	.delay_line = 0,
@@ -1949,9 +1952,6 @@ static void __init mx6_sabresd_board_init(void)
 		mipi_dsi_pdata.ipu_id = 0;
 		mipi_dsi_pdata.disp_id = 1;
 		ldb_data.sec_ipu_id = 0;
-		// UIB
-		ldb_data.mode = LDB_SEP0;
-		sabresd_fb_data[0].mode_str = "LDB-WSVGA";
 	}
 	imx6q_add_mxc_hdmi_core(&hdmi_core_data);
 
