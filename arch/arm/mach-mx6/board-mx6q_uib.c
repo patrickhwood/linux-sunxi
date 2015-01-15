@@ -220,7 +220,22 @@ extern char *pu_reg_id;
 extern int epdc_enabled;
 extern bool enet_to_gpio_6;
 
-static int max17135_regulator_init(struct max17135 *max17135);
+/* eMMC */
+static const struct esdhc_platform_data mx6q_sabresd_sd0_data __initconst = {
+	.always_present = 1,
+	.keep_power_at_suspend = 1,
+	.support_8bit = 1,
+	.delay_line = 0,
+	.cd_type = ESDHC_CD_PERMANENT,
+};
+
+static const struct esdhc_platform_data mx6q_sabresd_sd1_data __initconst = {
+	.always_present = 1,
+	.keep_power_at_suspend = 1,
+	.delay_line = 0,
+	.cd_type = ESDHC_CD_CONTROLLER,
+	.runtime_pm = 1,
+};
 
 static const struct esdhc_platform_data mx6q_sabresd_sd2_data __initconst = {
 	.always_present = 1,
@@ -228,23 +243,6 @@ static const struct esdhc_platform_data mx6q_sabresd_sd2_data __initconst = {
 	.delay_line = 0,
 	.cd_type = ESDHC_CD_CONTROLLER,
 	.runtime_pm = 1,
-};
-
-static const struct esdhc_platform_data mx6q_sabresd_sd3_data __initconst = {
-	.always_present = 1,
-	.keep_power_at_suspend = 1,
-	.support_8bit = 1,
-	.delay_line = 0,
-	.cd_type = ESDHC_CD_CONTROLLER,
-	.runtime_pm = 1,
-};
-
-static const struct esdhc_platform_data mx6q_sabresd_sd4_data __initconst = {
-	.always_present = 1,
-	.keep_power_at_suspend = 1,
-	.support_8bit = 1,
-	.delay_line = 0,
-	.cd_type = ESDHC_CD_PERMANENT,
 };
 
 static const struct anatop_thermal_platform_data
@@ -360,11 +358,13 @@ static void spi_device_init(void)
 				ARRAY_SIZE(imx6_sabresd_spi_nor_device));
 }
 
+#ifdef SABRE
 static struct imx_ssi_platform_data mx6_sabresd_ssi_pdata = {
 	.flags = IMX_SSI_DMA | IMX_SSI_SYN,
 };
 
-#ifdef SABRE
+static int max17135_regulator_init(struct max17135 *max17135);
+
 static struct platform_device mx6_sabresd_audio_wm8958_device = {
 	.name = "imx-wm8958",
 };
@@ -1655,6 +1655,13 @@ static struct platform_pwm_backlight_data mx6_sabresd_pwm_backlight_data = {
 	.pwm_period_ns = 50000,
 };
 
+static struct platform_pwm_backlight_data mx6_sabresd_pwm_speaker = {
+	.pwm_id = 2,
+	.max_brightness = 255,
+	.dft_brightness = 25,
+	.pwm_period_ns = 1000000,
+};
+
 #ifdef CONFIG_HAVE_EPIT
 static struct platform_ir_data mx6_sabresd_ir_data = {
     .pwm_id = 1,
@@ -2006,9 +2013,9 @@ static void __init mx6_sabresd_board_init(void)
 	/* Move sd4 to first because sd4 connect to emmc.
 	   Mfgtools want emmc is mmcblk0 and other sd card is mmcblk1.
 	*/
-	imx6q_add_sdhci_usdhc_imx(3, &mx6q_sabresd_sd4_data);
-	imx6q_add_sdhci_usdhc_imx(2, &mx6q_sabresd_sd3_data);
-	imx6q_add_sdhci_usdhc_imx(1, &mx6q_sabresd_sd2_data);
+	imx6q_add_sdhci_usdhc_imx(0, &mx6q_sabresd_sd0_data);
+	imx6q_add_sdhci_usdhc_imx(2, &mx6q_sabresd_sd2_data);
+	imx6q_add_sdhci_usdhc_imx(1, &mx6q_sabresd_sd1_data);
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
 	imx6q_sabresd_init_usb();
 	/* SATA is not supported by MX6DL/Solo */
@@ -2037,6 +2044,7 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
 	imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
+	imx6q_add_mxc_pwm_backlight(2, &mx6_sabresd_pwm_speaker);
 
 #ifdef CONFIG_MX6_IR
 	/* add MXC IR device */
