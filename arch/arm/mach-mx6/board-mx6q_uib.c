@@ -1657,8 +1657,8 @@ static struct platform_pwm_backlight_data mx6_sabresd_pwm_backlight_data = {
 
 static struct platform_pwm_backlight_data mx6_sabresd_pwm_speaker = {
 	.pwm_id = 2,
-	.max_brightness = 255,
-	.dft_brightness = 25,
+	.max_brightness = 10000,
+	.dft_brightness = 0,
 	.pwm_period_ns = 1000000,
 };
 
