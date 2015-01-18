@@ -207,11 +207,13 @@
 #define OBSRV_MUX1_ENET_IRQ		0x9
 
 static struct clk *sata_clk;
+#ifdef SABRE
 static struct clk *clko;
 static int mma8x5x_position;
 static int mag3110_position = 1;
 static int max11801_mode = 1;
 static int caam_enabled;
+#endif
 static int uart5_enabled;
 
 extern char *gp_reg_id;
@@ -250,11 +252,13 @@ static const struct anatop_thermal_platform_data
 		.name = "anatop_thermal",
 };
 
+#ifdef SABRE
 static const struct imxuart_platform_data mx6q_sd_uart5_data __initconst = {
 	.flags      = IMXUART_HAVE_RTSCTS,
 	.dma_req_rx = MX6Q_DMA_REQ_UART5_RX,
 	.dma_req_tx = MX6Q_DMA_REQ_UART5_TX,
 };
+#endif
 
 static inline void mx6q_sabresd_init_uart(void)
 {
@@ -1401,6 +1405,7 @@ static struct ion_platform_data imx_ion_data = {
 	},
 };
 
+#ifdef SABRE
 static struct fsl_mxc_capture_platform_data capture_data[] = {
 	{
 		.csi = 0,
@@ -1442,6 +1447,7 @@ static struct platform_device mxc_bt_rfkill = {
 static struct imx_bt_rfkill_platform_data mxc_bt_rfkill_data = {
 	.power_change = mx6q_sd_bt_power_change,
 };
+#endif /* SABRE */
 
 struct imx_vout_mem {
 	resource_size_t res_mbase;
@@ -1547,10 +1553,10 @@ static void gps_power_on(bool on)
 }
 
 static struct gpio_led imx6q_gpio_leds[] = {
-	/* GPIO_LED(UIB_LED0, "led0", 0, 1, ""), */
-	GPIO_LED(UIB_LED1, "led1", 0, 1, ""),
-	GPIO_LED(UIB_LED2, "led2", 0, 1, ""),
-	/* for testing, set led3's suspend state to off */
+	/* set 4th argument to 1 to keep LED on during suspend */
+	/* GPIO_LED(UIB_LED0, "led0", 0, 0, ""), GPIO not assigned yet */
+	GPIO_LED(UIB_LED1, "led1", 0, 0, ""),
+	GPIO_LED(UIB_LED2, "led2", 0, 0, ""),
 	GPIO_LED(UIB_LED3, "led3", 0, 0, ""),
 };
 
@@ -1848,7 +1854,6 @@ static void __init uart5_init(void)
 static void __init mx6_sabresd_board_init(void)
 {
 	int i;
-	int ret;
 	struct clk *clko, *clko2;
 	struct clk *new_parent;
 	int rate;
@@ -1979,8 +1984,7 @@ static void __init mx6_sabresd_board_init(void)
 	i2c_register_board_info(2, mxc_i2c2_board_info,
 			ARRAY_SIZE(mxc_i2c2_board_info));
 #ifdef SABRE
-	ret = gpio_request(SABRESD_PFUZE_INT, "pFUZE-int");
-	if (ret) {
+	if (gpio_request(SABRESD_PFUZE_INT, "pFUZE-int")) {
 		printk(KERN_ERR"request pFUZE-int error!!\n");
 		return;
 	} else {
@@ -2093,14 +2097,6 @@ static void __init mx6_sabresd_board_init(void)
 		}
 #endif
 	}
-	/*
-	ret = gpio_request_array(mx6q_sabresd_flexcan_gpios,
-			ARRAY_SIZE(mx6q_sabresd_flexcan_gpios));
-	if (ret)
-		pr_err("failed to request flexcan1-gpios: %d\n", ret);
-	else
-		imx6q_add_flexcan0(&mx6q_sabresd_flexcan0_pdata);
-	*/
 
 	clko2 = clk_get(NULL, "clko2_clk");
 	if (IS_ERR(clko2))
