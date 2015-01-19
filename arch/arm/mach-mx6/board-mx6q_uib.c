@@ -42,6 +42,7 @@
 #include <linux/ipu.h>
 #include <linux/mxcfb.h>
 #include <linux/pwm_backlight.h>
+#include <linux/pwm_generic.h>
 #include <linux/fec.h>
 #include <linux/memblock.h>
 #include <linux/gpio.h>
@@ -1661,11 +1662,8 @@ static struct platform_pwm_backlight_data mx6_sabresd_pwm_backlight_data = {
 	.pwm_period_ns = 50000,
 };
 
-static struct platform_pwm_backlight_data mx6_sabresd_pwm_speaker = {
+static struct platform_pwm_generic_data mx6_sabresd_pwm_speaker = {
 	.pwm_id = 2,
-	.max_brightness = 10000,
-	.dft_brightness = 0,
-	.pwm_period_ns = 1000000,
 };
 
 #ifdef CONFIG_HAVE_EPIT
@@ -2048,7 +2046,8 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
 	imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
-	imx6q_add_mxc_pwm_backlight(2, &mx6_sabresd_pwm_speaker);
+	platform_device_register_resndata(NULL, "pwm-generic", 2, NULL, 0,
+		&mx6_sabresd_pwm_speaker, sizeof(mx6_sabresd_pwm_speaker));
 
 #ifdef CONFIG_MX6_IR
 	/* add MXC IR device */
