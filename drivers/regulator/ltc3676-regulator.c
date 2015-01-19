@@ -59,10 +59,10 @@
  *
  */
 static const int ltc_sw1[] = {
-	825000,850000,875000,900000,925000,950000,975000,1000000,1025000,1050000,
-	1075000,1100000,1125000,1150000,1175000,1200000,1225000,1250000,1275000,
-	1300000,1325000,1350000,1375000,1400000,1425000,1450000,1475000,1500000,
-	1525000,1550000,1575000,1600000,
+	 825000, 850000, 875000, 900000, 925000, 950000, 975000,1000000,
+	1025000,1050000,1075000,1100000,1125000,1150000,1175000,1200000,
+	1225000,1250000,1275000,1300000,1325000,1350000,1375000,1400000,
+	1425000,1450000,1475000,1500000,1525000,1550000,1575000,1600000,
 };
 
 /* 
@@ -83,22 +83,20 @@ static const int ltc_sw2[] = {
  * DCDC_3_BOTTOM_FB_RESISTOR_R2  107000
  */
 static const int ltc_sw3[] = {
-	798014,822196,846379,870561,894743,918925,943107,967290,991472,1015654,
-	1039836,1064019,1088201,1112383,1136565,1160748,1184930,1209112,1233294,
-	1257477,1281659,1305841,1330023,1354206,1378388,1402570,1426752,1450935,
-	1475117,1499299,1523481,1547664,
+	 798014, 822196, 846379, 870561, 894743, 918925, 943107, 967290, 991472,1015654,
+	1039836,1064019,1088201,1112383,1136565,1160748,1184930,1209112,1233294,1257477,
+	1281659,1305841,1330023,1354206,1378388,1402570,1426752,1450935,1475117,1499299,
+	1523481,1547664,
 };
 
 /* 
- * Following are the feedback resistor values on the NovPek i.MX6 board -- SW4 DDR_+1.5V
- * DCDC_4_TOP_FB_RESISTOR_R1     100000
- * DCDC_4_BOTTOM_FB_RESISTOR_R2   93100
+ * Following are the feedback resistor values on the UIB i.MX6 board -- SW4 VDDARM and VDDSOC
  */
 static const int ltc_sw4[] = {
-	855572,881498,907425,933351,959278,985204,1011131,1037057,1062983,1088910,
-	1114836,1140763,1166689,1192615,1218542,1244468,1270395,1296321,1322248,
-	1348174,1374100,1400027,1425953,1451879,1477806,1503733,1529658,1555585,
-	1581511,1607438,1633365,1659291,
+	 775000,  798000,  821000,  844000,  867000,  890000,  914000,  937000,
+	 960000,  983000, 1006000, 1029000, 1052000, 1075000, 1098000, 1121000,
+	1145000, 1168000, 1191000, 1214000, 1237000, 1260000, 1283000, 1306000,
+	1329000, 1352000, 1376000, 1399000, 1422000, 1445000, 1468000, 1491000
 };
 
 /* Supported voltage values for LD04 regulator in mV */
@@ -873,10 +871,10 @@ static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
 	switch (dcdc) 
 	{
       		case LTC3676_DCDC_1: 
-            	#ifdef LTC3676_1  //DCDC_1 has a fix function in LTC3676-1, see datasheet.
+#ifdef LTC3676_1  //DCDC_1 has a fix function in LTC3676-1, see datasheet.
                		return -1;
 			break;
-            	#endif	
+#endif	
 			dac_vol = lookUpTable(1, uV, uV); //ltc_sw1[data];	
 			if ((dac_vol > 0x1F) || (dac_vol < 0))
 		        	return -1;
@@ -1025,6 +1023,7 @@ static int ltc3676_set_suspend_mode(struct regulator_dev *dev,unsigned int mode)
 	return 0;
 }
 
+#ifdef LTC3676_1
 static int ltc3676_ldo_get_voltage(struct regulator_dev *dev)
 {
 	struct ltc3676_regulator *ltc = rdev_get_drvdata(dev);
@@ -1118,6 +1117,7 @@ static int ltc3676_ldo4_list_voltage(struct regulator_dev *dev,
 	
 	return -EINVAL;
 }
+#endif // LTC3676_1
 
 /* Operations permitted on SWx */
 static struct regulator_ops ltc3676_sw_ops = 
@@ -1151,6 +1151,7 @@ static struct regulator_ops ltc3676_sw_ops =
 //	.disable = ltc3676_ldo_disable,
 // };
 
+#if 0
 /* Operations permitted on LDO2 */
 static struct regulator_ops ltc3676_ldo2_ops = 
 {
@@ -1179,6 +1180,7 @@ static struct regulator_ops ltc3676_ldo4_ops =
 	   .list_voltage = ltc3676_ldo4_list_voltage,
 	#endif   
 };
+#endif
 
 static struct regulator_desc ltc3676_reg_desc[] = {
 	{
@@ -1190,7 +1192,7 @@ static struct regulator_desc ltc3676_reg_desc[] = {
 		.owner = THIS_MODULE
 	},
 	{
-		.name = "vddarm_ext",
+		.name = "SW2",
 		.id = LTC3676_VSW2,
 		.ops = &ltc3676_sw_ops,
 		.type = REGULATOR_VOLTAGE,
@@ -1198,7 +1200,7 @@ static struct regulator_desc ltc3676_reg_desc[] = {
 		.owner = THIS_MODULE,
 	},
 	{
-		.name = "vddsoc_ext",
+		.name = "SW3",
 		.id = LTC3676_VSW3,
 		.ops = &ltc3676_sw_ops,
 		.type = REGULATOR_VOLTAGE,
@@ -1206,7 +1208,7 @@ static struct regulator_desc ltc3676_reg_desc[] = {
 		.owner = THIS_MODULE,
 	},
 	{
-		.name = "SW4",
+		.name = "vddarmsoc_ext",
 		.id = LTC3676_VSW4,
 		.ops = &ltc3676_sw_ops,
 		.type = REGULATOR_VOLTAGE,
@@ -1279,8 +1281,8 @@ int ltc3676_register_regulator(struct ltc3676_regulator *reg_data, int reg,
 	if (!pdev)
 		return -ENOMEM;
 
-	printk(KERN_INFO "%s: Trying to register regulator %s, %d: %d\n", __func__,
-	initdata->constraints.name, reg, ret);
+	printk(KERN_INFO "%s: Trying to register regulator %s, %d\n", __func__,
+			initdata->constraints.name, reg);
 	
 	reg_data->pmic.pdev[reg] = pdev;
 	initdata->driver_data = reg_data;
