@@ -137,11 +137,12 @@ static ssize_t pwm_generic_set_duty(struct device *dev,
 	else {
 		if (duty > pwm->max_duty)
 			duty = pwm->max_duty;
+
 		pwm->duty = duty;
 
 		/* scale duty based on period */
-		pwm_config(pwm->pwm, ((unsigned long) duty * pwm->period) / pwm->max_duty, pwm->period);
-		if (pwm->period && pwm->duty) {
+		pwm_config(pwm->pwm, (pwm->duty * pwm->period) / pwm->max_duty, pwm->period);
+		if (pwm->period) {
 			pwm_enable(pwm->pwm);
 		}
 	}
@@ -272,7 +273,7 @@ static int pwm_generic_resume(struct platform_device *pdev)
 {
 	struct pwm_generic *pwm = platform_get_drvdata(pdev);
 
-	pwm_config(pwm->pwm, pwm->duty, pwm->period);
+	pwm_config(pwm->pwm, (pwm->duty * pwm->period) / pwm->max_duty, pwm->period);
 	pwm_enable(pwm->pwm);
 	return 0;
 }
