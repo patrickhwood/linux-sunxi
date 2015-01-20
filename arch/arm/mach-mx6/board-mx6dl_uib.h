@@ -259,6 +259,11 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 
 	/* PWM speaker */
 	MX6DL_PAD_SD4_DAT1__PWM3_PWMO,
+
+	/* OSD/SSD2543 touch panel IRQ */
+	MX6DL_PAD_EIM_D23__GPIO_3_23,
+	/* OSD/SSD2543 touch panel reset */
+	MX6DL_PAD_EIM_D24__GPIO_3_24,
 };
 
 #ifdef SABRE

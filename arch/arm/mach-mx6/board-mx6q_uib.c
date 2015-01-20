@@ -92,6 +92,9 @@
 #define UIB_LED2	IMX_GPIO_NR(1, 7)
 #define UIB_LED3	IMX_GPIO_NR(1, 8)
 
+#define UIB_TOUCH_IRQ    IMX_GPIO_NR(3, 23)
+#define UIB_TOUCH_RESET  IMX_GPIO_NR(3, 24)
+
 #define SABRESD_BT_RESET	IMX_GPIO_NR(1, 2)
 #define SABRESD_MICROPHONE_DET	IMX_GPIO_NR(1, 9)
 #define SABRESD_CSI0_PWN	IMX_GPIO_NR(1, 16)
@@ -816,12 +819,19 @@ static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 };
 
 static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
+#ifdef SABRE
 	{
 		I2C_BOARD_INFO("mxc_hdmi_i2c", 0x50),
 	},
+#endif
 };
 
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
+	{
+		I2C_BOARD_INFO("osd_ts", 0x48),
+		.irq = gpio_to_irq(UIB_TOUCH_IRQ),
+	},
+#ifdef SABRE
 	{
 		I2C_BOARD_INFO("egalax_ts", 0x4),
 		.irq = gpio_to_irq(SABRESD_CAP_TCH_INT1),
@@ -834,6 +844,7 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 		I2C_BOARD_INFO("mxc_ldb_i2c", 0x50),
 		.platform_data = (void *)1,	/* lvds port1 */
 	},
+#endif
 };
 
 #ifdef SABRE

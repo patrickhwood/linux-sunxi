@@ -795,4 +795,11 @@ config TOUCHSCREEN_DA9052
         help
           Say y here to support the touchscreen found on
           Dialog Semiconductor DA9052 PMIC
+
+config TOUCHSCREEN_OSD2168
+        tristate "OSD070T2168-58TS i2c TSI"
+        depends on I2C
+        help
+          Say y here to support the touchscreen found on
+          SSL over I2C
 endif
