@@ -82,10 +82,10 @@ static ssize_t pwm_generic_set_period(struct device *dev,
 	int err;
 
 	err = strict_strtol(buf, 10, &period);
-	if (err)
+	if (err || period < 0)
 		return -EINVAL;
-
-	if (period == 0) {
+	else if (period == 0) {
+		pwm->period = 0;
 		pwm_disable(pwm->pwm);
 	}
 	else {
@@ -96,7 +96,9 @@ static ssize_t pwm_generic_set_period(struct device *dev,
 			period = pwm->min_period;
 
 		pwm->period = period;
-		pwm_config(pwm->pwm, pwm->duty, pwm->period);
+
+		/* scale duty based on period */
+		pwm_config(pwm->pwm, (pwm->duty * pwm->period) / pwm->max_duty, pwm->period);
 		if (pwm->duty) {
 			pwm_enable(pwm->pwm);
 		}
@@ -112,7 +114,7 @@ static ssize_t pwm_generic_get_duty(struct device *dev,
 	struct pwm_generic *pwm = platform_get_drvdata(pdev);
 
 	if (pwm->period)
-		return sprintf(buf, "%u\n", pwm->duty * pwm->max_duty / pwm->period);
+		return sprintf(buf, "%u\n", pwm->duty);
 	else
 		return sprintf(buf, "disabled\n");
 }
@@ -126,21 +128,25 @@ static ssize_t pwm_generic_set_duty(struct device *dev,
 	int err;
 
 	err = strict_strtol(buf, 10, &duty);
-	if (err)
+	if (err || duty < 0)
 		return -EINVAL;
-
-	if (duty > 0) {
+	else if (duty == 0) {
+		pwm->duty = 0;
+		pwm_disable(pwm->pwm);
+	}
+	else {
 		if (duty > pwm->max_duty)
 			duty = pwm->max_duty;
-		pwm->duty = ((unsigned long) duty * pwm->period) / pwm->max_duty;
-		pwm_config(pwm->pwm, pwm->duty, pwm->period);
-		if (pwm->period) {
+		pwm->duty = duty;
+
+		/* scale duty based on period */
+		pwm_config(pwm->pwm, ((unsigned long) duty * pwm->period) / pwm->max_duty, pwm->period);
+		if (pwm->period && pwm->duty) {
 			pwm_enable(pwm->pwm);
 		}
-		return count;
 	}
 
-	return -EINVAL;
+	return count;
 }
 
 static ssize_t pwm_generic_get_max_duty(struct device *dev,
@@ -257,7 +263,6 @@ static int pwm_generic_suspend(struct platform_device *pdev,
 {
 	struct pwm_generic *pwm = platform_get_drvdata(pdev);
 
-printk("pwm_generic_suspend\n");
 	pwm_config(pwm->pwm, 0, pwm->period);
 	pwm_disable(pwm->pwm);
 	return 0;
@@ -267,7 +272,6 @@ static int pwm_generic_resume(struct platform_device *pdev)
 {
 	struct pwm_generic *pwm = platform_get_drvdata(pdev);
 
-printk("pwm_generic_resume\n");
 	pwm_config(pwm->pwm, pwm->duty, pwm->period);
 	pwm_enable(pwm->pwm);
 	return 0;
@@ -281,7 +285,6 @@ static void pwm_generic_shutdown(struct platform_device *pdev)
 {
 	struct pwm_generic *pwm = platform_get_drvdata(pdev);
 
-printk("pwm_generic_shutdown\n");
 	pwm_config(pwm->pwm, 0, pwm->period);
 	pwm_disable(pwm->pwm);
 }
