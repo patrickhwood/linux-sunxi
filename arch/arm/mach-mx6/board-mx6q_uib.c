@@ -1885,9 +1885,13 @@ static void __init mx6_sabresd_board_init(void)
 		{
 			// drive PMIC standby pad low
 			// @@@ note: this is changing to the iMX6 PMIC_STBY_REQ pin in Rev 2
+#define PMIC_STBY IMX_GPIO_NR(3, 16)
 			iomux_v3_cfg_t pmic_pad = MX6DL_PAD_EIM_D16__GPIO_3_16;
 			mxc_iomux_v3_setup_pad(pmic_pad);
-			gpio_direction_output(IMX_GPIO_NR(3, 16), 0);
+			gpio_request(PMIC_STBY, "");
+			gpio_direction_output(PMIC_STBY, 0);
+			// allow sysfs to modify this gpio for testing
+			gpio_export(PMIC_STBY, false);
 		}
 	}
 
