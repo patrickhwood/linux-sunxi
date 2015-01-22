@@ -860,10 +860,9 @@ static int ltc3676_dcdc_set_voltage(struct regulator_dev *dev, int min_uV, int m
  * the suspend voltage level.  This allows the suspend voltage to be configured
  * once and then activated (enabled) easily when the suspend state is entered.
  */
-static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
+
+int ltc3676_set_suspend_voltage_ex(struct ltc3676_regulator *ltc, int dcdc, int uV)
 {
-	struct ltc3676_regulator *ltc = rdev_get_drvdata(dev);
-	int dcdc = rdev_get_id(dev);
 	int dac_vol, data;
 	int maxuV = uV + 30000;
 
@@ -933,6 +932,15 @@ static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
 			return -EINVAL;
 	}		
 	return 0;
+}
+EXPORT_SYMBOL_GPL(ltc3676_set_suspend_voltage_ex);
+
+static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
+{
+	struct ltc3676_regulator *ltc = rdev_get_drvdata(dev);
+	int dcdc = rdev_get_id(dev);
+
+	return ltc3676_set_suspend_voltage_ex(ltc, dcdc, uV);
 }
 
 /*
