@@ -1606,14 +1606,6 @@ static void __init imx6q_add_device_gpio_leds(void) {}
 	.debounce_interval = debounce,				\
 }
 
-static struct gpio_keys_button sabresd_buttons[] = {
-};
-
-static struct gpio_keys_platform_data sabresd_button_data = {
-	.buttons	= sabresd_buttons,
-	.nbuttons	= ARRAY_SIZE(sabresd_buttons),
-};
-
 static struct gpio_keys_button new_sabresd_buttons[] = {
 	GPIO_BUTTON(SABRESD_POWER_OFF, KEY_POWER, 1, "power-key", 1, 1),
 };
@@ -1631,34 +1623,9 @@ static struct platform_device sabresd_button_device = {
 
 static void __init imx6q_add_device_buttons(void)
 {
-	/* fix me */
-	/* For new sabresd(RevB4 ane above) change the
-	 * ONOFF key(SW1) design, the SW1 now connect
-	 * to GPIO_3_29, it can be use as a general power
-	 * key that Android reuired. But those old sabresd
-	 * such as RevB or older could not support this
-	 * change, so it needs a way to distinguish different
-	 * boards. Before board id/rev are defined cleary,
-	 * there is a simple way to achive this, that is using
-	 * SOC revison to identify differnt board revison.
-	 *
-	 * With the new sabresd change and SW mapping the
-	 * SW1 as power key, below function related to power
-	 * key are OK on new sabresd board(B4 or above).
-	 * 	1 Act as power button to power on the device when device is power off
-	 * 	2 Act as power button to power on the device(need keep press SW1 >5s)
-	 *	3 Act as power key to let device suspend/resume
-	 *	4 Act screenshort(hold power key and volume down key for 2s)
-	 */
-	if (mx6q_revision() >= IMX_CHIP_REVISION_1_2 ||
-			mx6dl_revision() >= IMX_CHIP_REVISION_1_1)
-		platform_device_add_data(&sabresd_button_device,
-				&new_sabresd_button_data,
-				sizeof(new_sabresd_button_data));
-	else
-		platform_device_add_data(&sabresd_button_device,
-				&sabresd_button_data,
-				sizeof(sabresd_button_data));
+	platform_device_add_data(&sabresd_button_device,
+			&new_sabresd_button_data,
+			sizeof(new_sabresd_button_data));
 
 	platform_device_register(&sabresd_button_device);
 }
@@ -1916,8 +1883,6 @@ static void __init mx6_sabresd_board_init(void)
 	 mxc_iomux_set_gpr_register(1, 21, 1, 1);
 #endif
 
-	gp_reg_id = sabresd_dvfscore_data.reg_id;
-	soc_reg_id = sabresd_dvfscore_data.soc_id;
 	mx6q_sabresd_init_uart();
 	imx6x_add_ram_console();
 
