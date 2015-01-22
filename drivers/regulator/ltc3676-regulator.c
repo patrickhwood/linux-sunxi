@@ -834,7 +834,7 @@ static int ltc3676_dcdc_set_voltage(struct regulator_dev *dev, int min_uV, int m
 		     	return ltc_3676_reg_write(ltc, LTC3676_REG_DVB3A, data);	
 			break;
 	      case LTC3676_DCDC_4:
-			printk(KERN_ERR "ltc3676_pmic_init: set voltage on Buck4: %d, %d\n", min_uV, max_uV);
+			printk(KERN_ERR "ltc3676 pmic: set voltage on Buck4: %d, %d\n", min_uV, max_uV);
 			dac_vol = lookUpTable(4, min_uV, max_uV); //ltc_sw4[data];	
 			if ((dac_vol > 0x1F) || (dac_vol < 0))
 		        	return -1;
@@ -865,6 +865,7 @@ static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
 	struct ltc3676_regulator *ltc = rdev_get_drvdata(dev);
 	int dcdc = rdev_get_id(dev);
 	int dac_vol, data;
+	int maxuV = uV + 30000;
 
 	if (dcdc < LTC3676_DCDC_1 || dcdc > LTC3676_DCDC_4)
 		return -EINVAL;
@@ -876,7 +877,7 @@ static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
                		return -1;
 			break;
 #endif	
-			dac_vol = lookUpTable(1, uV, uV); //ltc_sw1[data];	
+			dac_vol = lookUpTable(1, uV, maxuV); //ltc_sw1[data];	
 			if ((dac_vol > 0x1F) || (dac_vol < 0))
 		        	return -1;
 	  
@@ -889,7 +890,7 @@ static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
 		     	return ltc_3676_reg_write(ltc, LTC3676_REG_DVB1B, data);
 		     	break;
 	      case LTC3676_DCDC_2:
-			dac_vol = lookUpTable(2, uV, uV); //ltc_sw2[data];
+			dac_vol = lookUpTable(2, uV, maxuV); //ltc_sw2[data];
 			if ((dac_vol > 0x1F) || (dac_vol < 0))
 		        	return -1;
 
@@ -902,7 +903,7 @@ static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
 		     	return ltc_3676_reg_write(ltc, LTC3676_REG_DVB2B, data);	
 			break;
 	      case LTC3676_DCDC_3:
-			dac_vol = lookUpTable(3, uV, uV); //ltc_sw3[data];	
+			dac_vol = lookUpTable(3, uV, maxuV); //ltc_sw3[data];	
 			if ((dac_vol > 0x1F) || (dac_vol < 0))
 		        	return -1;
 
@@ -915,8 +916,8 @@ static int ltc3676_set_suspend_voltage(struct regulator_dev *dev, int uV)
 		     	return ltc_3676_reg_write(ltc, LTC3676_REG_DVB3B, data);	
 			break;
 	      case LTC3676_DCDC_4:
-			dac_vol = lookUpTable(4, uV, uV); //ltc_sw4[data];	
-			printk(KERN_ERR "ltc3676_pmic_init: set suspend voltage on Buck4: %d\n", uV);
+			dac_vol = lookUpTable(4, uV, maxuV); //ltc_sw4[data];	
+			printk(KERN_ERR "ltc3676 pmic: set suspend voltage on Buck4: %d\n", ltc_sw4[dac_vol]);
 			if ((dac_vol > 0x1F) || (dac_vol < 0))
 		        	return -1;
 
@@ -967,7 +968,7 @@ static int ltc3676_set_suspend_enable(struct regulator_dev *dev)
 			break;
 	      case LTC3676_DCDC_4:
 			//Set the Buck4 Reference Select bit to activate DVB4B suspend voltage	 
-				printk(KERN_ERR "ltc3676_pmic_init: set suspend enable on Buck4\n");
+				printk(KERN_ERR "ltc3676 pmic: set suspend enable on Buck4\n");
 		     	return ltc_3676_set_bits(ltc, LTC3676_REG_DVB4A, BIT_5_MASK);
 			break; 			 
 		default:
@@ -1009,7 +1010,7 @@ static int ltc3676_set_suspend_disable(struct regulator_dev *dev)
 			break;
 	      case LTC3676_DCDC_4:
 			//Clear the Buck4 Reference Select bit to activate DVB4A normal voltage	 
-				printk(KERN_ERR "ltc3676_pmic_init: set suspend disable on Buck4\n");
+				printk(KERN_ERR "ltc3676 pmic: set suspend disable on Buck4\n");
 		     	return ltc_3676_clear_bits(ltc, LTC3676_REG_DVB4A, BIT_5_MASK);
 			break; 			 
 		default:
