@@ -108,10 +108,6 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_CSI0_DAT10__UART1_TXD,
 	MX6DL_PAD_CSI0_DAT11__UART1_RXD,
 
-	/* UART3 for gps */
-	MX6DL_PAD_EIM_D24__UART3_TXD,
-	MX6DL_PAD_EIM_D25__UART3_RXD,
-
 	/* USB */
 	MX6DL_PAD_ENET_RX_ER__ANATOP_USBOTG_ID,
 	MX6DL_PAD_EIM_D21__USBOH3_USBOTG_OC,
@@ -230,7 +226,6 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 
 	/* Charge */
 	MX6DL_PAD_EIM_A25__GPIO_5_2,  /* FLT_1_B */
-	MX6DL_PAD_EIM_D23__GPIO_3_23, /* CHG_1_B */
 	MX6DL_PAD_EIM_DA13__GPIO_3_13, /* CHG_2_B  */
 	MX6DL_PAD_EIM_DA14__GPIO_3_14, /* FLT_2_B */
 

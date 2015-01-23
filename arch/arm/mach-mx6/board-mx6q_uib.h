@@ -60,7 +60,6 @@ static iomux_v3_cfg_t mx6q_sabresd_pads[] = {
 	MX6Q_PAD_RGMII_RD3__ENET_RGMII_RD3,
 	MX6Q_PAD_RGMII_RX_CTL__ENET_RGMII_RX_CTL,
 	MX6Q_PAD_ENET_TX_EN__GPIO_1_28,		/* Micrel RGMII Phy Interrupt */
-	MX6Q_PAD_EIM_D23__GPIO_3_23,		/* RGMII reset */
 	MX6Q_PAD_GPIO_16__ENET_ANATOP_ETHERNET_REF_OUT, /* Internal connect for 1588 TS Clock */
 
 	/* GPIO1 */
@@ -178,10 +177,6 @@ static iomux_v3_cfg_t mx6q_sabresd_pads[] = {
 	MX6Q_PAD_CSI0_DAT10__UART1_TXD,
 	MX6Q_PAD_CSI0_DAT11__UART1_RXD,
 
-	/* UART3 for gps */
-	MX6Q_PAD_EIM_D24__UART3_TXD,
-	MX6Q_PAD_EIM_D25__UART3_RXD,
-
 	/* USBOTG ID pin */
 	MX6Q_PAD_ENET_RX_ER__ANATOP_USBOTG_ID,
 
@@ -223,7 +218,6 @@ static iomux_v3_cfg_t mx6q_sabresd_pads[] = {
 
 	/* Charge */
 	MX6Q_PAD_EIM_A25__GPIO_5_2,  /* FLT_1_B */
-	MX6Q_PAD_EIM_D23__GPIO_3_23, /* CHG_1_B */
 	MX6Q_PAD_EIM_DA13__GPIO_3_13, /* CHG_2_B  */
 	MX6Q_PAD_EIM_DA14__GPIO_3_14, /* FLT_2_B */
 
