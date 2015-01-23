@@ -828,7 +828,7 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
-		I2C_BOARD_INFO("osd_ts", 0x48),
+		I2C_BOARD_INFO("ssd2543", 0x48),
 		.irq = gpio_to_irq(UIB_TOUCH_IRQ),
 	},
 #ifdef SABRE
