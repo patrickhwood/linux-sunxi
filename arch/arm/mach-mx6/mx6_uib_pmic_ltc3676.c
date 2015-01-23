@@ -183,7 +183,6 @@ static __init int ltc3676_pmic_init(void)
 			}
 			else
 				printk(KERN_INFO "%s: Regulator %s Voltage = %d.\n",__func__, ltc3676_global_regulator[i], ret);
-			msleep(900);
 		}
 		i++;
 	}
@@ -198,11 +197,9 @@ static __init int ltc3676_pmic_init(void)
 	// deasserted upon receipt of an unmasked interrupt from the GPC.
 	reg = regulator_get(NULL, "vddarmsoc_ext");
 	ltc = regulator_get_drvdata(reg);
-	ret = ltc3676_set_suspend_voltage_ex(ltc, LTC3676_DCDC_4, 900000);
+	ret = ltc3676_set_suspend_voltage_ex(ltc, LTC3676_DCDC_4, 1210000); // @@@ set to 1.21V for testing
 
 err0:
-	reg = NULL;
-	
 	return ret;
 }
 late_initcall(ltc3676_pmic_init);
