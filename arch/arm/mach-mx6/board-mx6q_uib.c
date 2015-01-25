@@ -94,8 +94,8 @@
 #define UIB_TOUCH_IRQ    IMX_GPIO_NR(3, 23)
 #define UIB_TOUCH_RESET  IMX_GPIO_NR(3, 24)
 
-#define SABRESD_POWER_OFF	IMX_GPIO_NR(3, 29)
-#define SABRESD_INFO		IMX_GPIO_NR(3, 28)
+#define SABRESD_POWER_OFF	IMX_GPIO_NR(3, 8)
+#define SABRESD_INFO		IMX_GPIO_NR(3, 9)
 
 #define SABRESD_BT_RESET	IMX_GPIO_NR(1, 2)
 #define SABRESD_MICROPHONE_DET	IMX_GPIO_NR(1, 9)
@@ -845,8 +845,8 @@ static void __init imx6q_add_device_gpio_leds(void) {}
 }
 
 static struct gpio_keys_button sabresd_buttons[] = {
-	GPIO_BUTTON(SABRESD_POWER_OFF, KEY_POWER, 1, "power-key", 1, 1),
-	GPIO_BUTTON(SABRESD_INFO, KEY_INFO, 1, "info-key", 1, 1),
+	GPIO_BUTTON(SABRESD_POWER_OFF, KEY_POWER, 0, "power-key", 1, 1),
+	GPIO_BUTTON(SABRESD_INFO, KEY_INFO, 0, "info-key", 1, 1),
 };
 
 static struct gpio_keys_platform_data sabresd_button_data = {
