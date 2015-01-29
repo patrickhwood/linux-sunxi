@@ -110,10 +110,6 @@
 #define SABRESD_USBH1_PWR_EN	IMX_GPIO_NR(1, 29)
 #define SABRESD_DISP0_PWR_EN	IMX_GPIO_NR(1, 30)
 
-#define SABRESD_SD3_CD		IMX_GPIO_NR(2, 0)
-#define SABRESD_SD3_WP		IMX_GPIO_NR(2, 1)
-#define SABRESD_SD2_CD		IMX_GPIO_NR(2, 2)
-#define SABRESD_SD2_WP		IMX_GPIO_NR(2, 3)
 #define SABRESD_CHARGE_DOK_B	IMX_GPIO_NR(2, 24)
 #define SABRESD_GPS_RESET	IMX_GPIO_NR(2, 28)
 #define SABRESD_SENSOR_EN	IMX_GPIO_NR(2, 31)
@@ -132,15 +128,12 @@
 #define SABRESD_CHARGE_FLT_1_B	IMX_GPIO_NR(5, 2)
 #define SABRESD_PCIE_WAKE_B	IMX_GPIO_NR(5, 20)
 
-#define SABRESD_CAP_TCH_INT1	IMX_GPIO_NR(6, 7)
-#define SABRESD_CAP_TCH_INT0	IMX_GPIO_NR(6, 8)
 #define SABRESD_DISP_RST_B	IMX_GPIO_NR(6, 11)
 #define SABRESD_DISP_PWR_EN	IMX_GPIO_NR(6, 14)
 #define SABRESD_CABC_EN0	IMX_GPIO_NR(6, 15)
 #define SABRESD_CABC_EN1	IMX_GPIO_NR(6, 16)
 #define SABRESD_AUX_3V15_EN	IMX_GPIO_NR(6, 9)
 #define SABRESD_DISP0_WR_REVB	IMX_GPIO_NR(6, 9)
-#define SABRESD_AUX_5V_EN	IMX_GPIO_NR(6, 10)
 #define SABRESD_DI1_D0_CS	IMX_GPIO_NR(6, 31)
 
 #define SABRESD_HEADPHONE_DET	IMX_GPIO_NR(7, 8)
@@ -184,6 +177,13 @@ static const struct esdhc_platform_data mx6q_sabresd_sd2_data __initconst = {
 	.delay_line = 0,
 	.cd_type = ESDHC_CD_CONTROLLER,
 	.runtime_pm = 1,
+};
+
+static const struct gpmi_nand_platform_data
+mx6q_gpmi_nand_platform_data __initconst = {
+	.min_prop_delay_in_ns    = 5,
+	.max_prop_delay_in_ns    = 9,
+	.max_chip_count          = 1,
 };
 
 static const struct anatop_thermal_platform_data
@@ -711,15 +711,11 @@ static struct imx_vout_mem vout_mem __initdata = {
 static void sabresd_suspend_enter(void)
 {
 	/* suspend preparation */
-	/* Disable AUX 5V */
-	gpio_set_value(SABRESD_AUX_5V_EN, 0);
 }
 
 static void sabresd_suspend_exit(void)
 {
 	/* resume restore */
-	/* Enable AUX 5V */
-	gpio_set_value(SABRESD_AUX_5V_EN, 1);
 }
 static const struct pm_platform_data mx6q_sabresd_pm_data __initconst = {
 	.name = "imx_pm",
@@ -1238,6 +1234,7 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_viim();
 	imx6q_add_imx2_wdt(0, NULL);
 	imx6q_add_dma();
+	imx6q_add_gpmi(&mx6q_gpmi_nand_platform_data);
 
 	imx6q_add_dvfs_core(&sabresd_dvfscore_data);
 
@@ -1288,11 +1285,6 @@ static void __init mx6_sabresd_board_init(void)
 	clko = clk_get(NULL, "clko_clk");
 	if (!IS_ERR(clko))
 		clk_set_parent(clko, clko2);
-
-	/* Enable Aux_5V */
-	gpio_request(SABRESD_AUX_5V_EN, "aux_5v_en");
-	gpio_direction_output(SABRESD_AUX_5V_EN, 1);
-	gpio_set_value(SABRESD_AUX_5V_EN, 1);
 
 #ifdef SABRE
 	gps_power_on(true);
