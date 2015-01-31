@@ -36,8 +36,8 @@
 #include <asm/gpio.h>
 #include <mach/hardware.h>
 
-#define TS_POLL_DELAY	(2000 * 1000 * 1000)	/* ns delay before the first sample */
-#define TS_POLL_PERIOD	(2000 * 1000 * 1000)	/* ns delay between samples */
+#define TS_POLL_DELAY	(50 * 1000 * 1000)	/* ns delay before the first sample */
+#define TS_POLL_PERIOD	(50 * 1000 * 1000)	/* ns delay between samples */
 #define MAX_X   1024
 #define MAX_Y   600
 #define MAX_Z   250
@@ -229,7 +229,7 @@ static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 
 	printk(SSD_DEBUG_LEVEL "%s, version ID %X:%X\n", __func__, buf[0], buf[1]);
 
-#if CONFIG_SSD_TOUCH_DEBUG
+#ifdef CONFIG_SSD_TOUCH_DEBUG
 /* dump all register values from ssdcfgTable to verify settings */
 	for (i = 0; i < sizeof(ssdcfgTable)/sizeof(ssdcfgTable[0]); i++)
 	{
@@ -290,8 +290,8 @@ static irqreturn_t ssd_ts_irq(int irq, void *handle)
 //	if (likely(ts->get_pendown_state()))
 	{
 		// disable_irq(ts->irq);
-		hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_DELAY),
-					HRTIMER_MODE_REL);
+		// hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_DELAY),
+		// 			HRTIMER_MODE_REL);
 	}
 
 	spin_unlock_irqrestore(&ts->lock, flags);
@@ -302,7 +302,6 @@ static irqreturn_t ssd_ts_irq(int irq, void *handle)
 static void ssd_ts_work(struct work_struct *work)
 {
 	struct ssl_ts_priv *ts = container_of(work,struct ssl_ts_priv,ssl_work);
-static int x = 100, y = 200;
 
     unsigned char buf[9]={0};
 	int send_report = 0;
@@ -458,7 +457,7 @@ static int ssd2543_probe(struct i2c_client *client,
 
 	spin_lock_init(&ts->lock);
 
-	input_dev->name = client->name;
+	input_dev->name = "SSD2543 Touch Screen";
 	input_dev->id.bustype = BUS_I2C;
 
 	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
