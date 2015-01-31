@@ -431,7 +431,7 @@ static int ssd2543_probe(struct i2c_client *client,
 {
 	struct ssl_ts_priv *ts;
 	struct input_dev *input_dev;
-	int err;
+	int err = 0;
 
 	printk(SSD_DEBUG_LEVEL "%s\n",__func__);
 	if (!i2c_check_functionality(client->adapter,
@@ -488,6 +488,7 @@ static int ssd2543_probe(struct i2c_client *client,
 	if (ts->irq < 0)
 	{
 		printk(SSD_ERROR_LEVEL "%s: request irq pin failed\n", __func__);
+		err = -ENODEV;
 		goto err_free_mem;
 	}
 
@@ -501,7 +502,6 @@ static int ssd2543_probe(struct i2c_client *client,
 	err = request_irq(ts->irq, ssd_ts_irq, IRQF_TRIGGER_FALLING, client->name, ts);
 	if (err < 0){
 		printk(SSD_ERROR_LEVEL "%s: request IRQ failed\n", __func__);
-		err = -ENODEV;
 		goto err_free_mem;
 	}
 
