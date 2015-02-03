@@ -31,16 +31,16 @@
 #include <asm/uaccess.h>
 #include <linux/version.h>
 #include <linux/slab.h>
-//#include <linux/gpio.h>
 #include <linux/regulator/consumer.h>
 #include <asm/gpio.h>
 #include <mach/hardware.h>
 
 #define TS_POLL_DELAY	(50 * 1000 * 1000)	/* ns delay before the first sample */
 #define TS_POLL_PERIOD	(50 * 1000 * 1000)	/* ns delay between samples */
-#define MAX_X   1024
-#define MAX_Y   600
-#define MAX_Z   250
+#define MAX_X   1023
+#define MAX_Y   599
+#define MAX_PRESSURE   20
+// #define MT_SUPPORT
 
 #define SSD_I2C_RETRY_COUNT   3
 #define SSD_I2C_DRIVER_NAME   "ssd2543"
@@ -389,9 +389,10 @@ static void ssd_ts_work(struct work_struct *work)
 		{
 			if (xpos != 0xFFF)					// touch down , report
 			{
-			    input_report_key(ts->input, BTN_TOUCH, 1);
                 input_report_abs(ts->input, ABS_X, xpos);
                 input_report_abs(ts->input, ABS_Y, ypos);
+                input_report_abs(ts->input, ABS_PRESSURE, width);
+			    input_report_key(ts->input, BTN_TOUCH, 1);
 				send_report = 1;
 				printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 
@@ -460,12 +461,26 @@ static int ssd2543_probe(struct i2c_client *client,
 	input_dev->name = "SSD2543 Touch Screen";
 	input_dev->id.bustype = BUS_I2C;
 
-	input_dev->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
+	input_dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
 	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
 
+#ifdef MT_SUPPORT
+	input_set_abs_params(input_dev,
+				ABS_MT_POSITION_X,  0, MAX_X, 0, 0);
+	input_set_abs_params(input_dev,
+				ABS_MT_POSITION_Y,  0, MAX_Y, 0, 0);
+	input_set_abs_params(input_dev,
+				ABS_MT_PRESSURE,    0, MAX_PRESSURE, 0, 0);
+	input_set_abs_params(input_dev,
+				ABS_MT_TOUCH_MAJOR, 0, 1, 0, 0);
+	input_set_abs_params(input_dev,
+				ABS_MT_TRACKING_ID, 0,
+				FINGERNO-1, 0, 0);
+#else
 	input_set_abs_params(input_dev, ABS_X, 0, MAX_X, 0, 0);
 	input_set_abs_params(input_dev, ABS_Y, 0, MAX_Y, 0, 0);
-	input_set_abs_params(input_dev, ABS_PRESSURE, 0, MAX_Z, 0, 0);
+	input_set_abs_params(input_dev, ABS_PRESSURE, 0, MAX_PRESSURE, 0, 0);
+#endif
 
 	gpio_request(GPIO_RESET, "SSD-RESET");
 	gpio_direction_output(GPIO_RESET, 1);
