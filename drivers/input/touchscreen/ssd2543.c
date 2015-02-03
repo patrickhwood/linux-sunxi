@@ -39,8 +39,8 @@
 #define TS_POLL_PERIOD	(50 * 1000 * 1000)	/* ns delay between samples */
 #define MAX_X   1023
 #define MAX_Y   599
-#define MAX_PRESSURE   20
-// #define MT_SUPPORT
+#define MAX_PRESSURE   200
+#define MT_SUPPORT
 
 #define SSD_I2C_RETRY_COUNT   3
 #define SSD_I2C_DRIVER_NAME   "ssd2543"
@@ -369,6 +369,8 @@ static void ssd_ts_work(struct work_struct *work)
 			input_report_abs(ts->input, ABS_MT_WIDTH_MAJOR, width);
             input_report_abs(ts->input, ABS_MT_POSITION_X, xpos);
             input_report_abs(ts->input, ABS_MT_POSITION_Y, ypos);
+            input_report_abs(ts->input, ABS_MT_PRESSURE, width);
+			input_report_key(ts->input, BTN_TOUCH, 1);
 			input_mt_sync(ts->input);
 			printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 		}
@@ -376,15 +378,12 @@ static void ssd_ts_work(struct work_struct *work)
 		{
 			send_report = 1;
             input_report_abs(ts->input, ABS_MT_TRACKING_ID, i);
-			input_report_abs(ts->input, ABS_MT_TOUCH_MAJOR, 0);
-			input_report_abs(ts->input, ABS_MT_WIDTH_MAJOR, width);
-            input_report_abs(ts->input, ABS_MT_POSITION_X, xpos);
-            input_report_abs(ts->input, ABS_MT_POSITION_Y, ypos);
+			input_report_key(ts->input, BTN_TOUCH, 0);
 			input_mt_sync(ts->input);
 			printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 		}
 
-		#else
+		#else	// MT_SUPPORT
 		if(i==0)				//only report finger 0
 		{
 			if (xpos != 0xFFF)					// touch down , report
@@ -392,7 +391,7 @@ static void ssd_ts_work(struct work_struct *work)
                 input_report_abs(ts->input, ABS_X, xpos);
                 input_report_abs(ts->input, ABS_Y, ypos);
                 input_report_abs(ts->input, ABS_PRESSURE, width);
-			    input_report_key(ts->input, BTN_TOUCH, 1);
+				input_report_key(ts->input, BTN_TOUCH, 1);
 				send_report = 1;
 				printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 
@@ -406,7 +405,7 @@ static void ssd_ts_work(struct work_struct *work)
 				printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 			}
 		}
-		#endif
+		#endif	// MT_SUPPORT
     }
 
 	if(send_report==1)
@@ -469,8 +468,7 @@ static int ssd2543_probe(struct i2c_client *client,
 				ABS_MT_POSITION_X,  0, MAX_X, 0, 0);
 	input_set_abs_params(input_dev,
 				ABS_MT_POSITION_Y,  0, MAX_Y, 0, 0);
-	input_set_abs_params(input_dev,
-				ABS_MT_PRESSURE,    0, MAX_PRESSURE, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_PRESSURE, 0, MAX_PRESSURE, 0, 0);
 	input_set_abs_params(input_dev,
 				ABS_MT_TOUCH_MAJOR, 0, 1, 0, 0);
 	input_set_abs_params(input_dev,
