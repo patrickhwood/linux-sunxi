@@ -37,9 +37,9 @@
 
 #define TS_POLL_DELAY	(50 * 1000 * 1000)	/* ns delay before the first sample */
 #define TS_POLL_PERIOD	(50 * 1000 * 1000)	/* ns delay between samples */
-#define MAX_X   1023
-#define MAX_Y   599
-#define MAX_PRESSURE   200
+#define MAX_X        1023
+#define MAX_Y        599
+#define MAX_PRESSURE 200
 #define MT_SUPPORT
 
 #define SSD_I2C_RETRY_COUNT   3
@@ -48,76 +48,75 @@
 #define SSD_ERROR_LEVEL   KERN_ALERT
 #define FINGERNO 5
 
-#define DEVICE_ID_REG                   0x02
-#define VERSION_ID_REG                  0x03
-#define EVENT_STATUS                    0x79
-#define FINGER00_REG                    0x7C
-#define DEVICE_CHANEL_REG               0x06
-
+#define DEVICE_ID_REG      0x02
+#define VERSION_ID_REG     0x03
+#define EVENT_STATUS       0x79
+#define FINGER00_REG       0x7C
+#define DEVICE_CHANEL_REG  0x06
 
 #define GPIO_IRQ	IMX_GPIO_NR(3, 23)   //irq
 #define GPIO_RESET	IMX_GPIO_NR(3, 24)    //reset
 
 struct ChipSetting
 {
-    char No;
-    char Reg;
-    char Data1;
-    char Data2;
+	char No;
+	char Reg;
+	char Data1;
+	char Data2;
 };
 
 const struct ChipSetting ssdcfgTable[] = {
-    {2,0x06,0x19,0x0E},
-    {2,0x28,0x00,0x12},
-    {2,0x07,0x00,0xE1},
-    {2,0x08,0x00,0xE2},
-    {2,0x09,0x00,0xE3},
-    {2,0x0A,0x00,0xE4},
-    {2,0x0B,0x00,0xE5},
-    {2,0x0C,0x00,0xE6},
-    {2,0x0D,0x00,0xE7},
-    {2,0x0E,0x00,0xE8},
-    {2,0x0F,0x00,0xE9},
-    {2,0x10,0x00,0xEA},
-    {2,0x11,0x00,0xEB},
-    {2,0x12,0x00,0xEC},
-    {2,0x13,0x00,0xED},
-    {2,0x14,0x00,0xEE},
-    {2,0x15,0x00,0xEF},
-    {2,0x16,0x00,0xF0},
-    {2,0x17,0x00,0xF1},
-    {2,0x18,0x00,0xF2},
-    {2,0x19,0x00,0xF3},
-    {2,0x1A,0x00,0xF4},
-    {2,0x1B,0x00,0xF5},
-    {2,0x1C,0x00,0xF6},
-    {2,0x1D,0x00,0xF7},
-    {2,0x1E,0x00,0xF8},
-    {2,0x1F,0x00,0xF9},
-    {2,0x20,0x00,0xFA},
-    {2,0xD7,0x00,0x02},
-    {2,0xD8,0x00,0x07},
-    {2,0xDB,0x00,0x02},
-    {2,0x30,0x08,0x0D},
-    {2,0x34,0xC6,0x40},
-    {2,0x36,0x00,0x1A},
-    {2,0x3A,0x00,0x00},
-    {2,0x65,0x00,0x04},
-    {2,0x66,0x27,0xF0},
-    {2,0x67,0x27,0x60},
-    {2,0x7A,0xFF,0xFF},
-    {2,0x7B,0x00,0x03},
-    {2,0x25,0x00,0x0C},
-    {2,0x04,0x00,0x01},
-    {2,0xFF,0x00,0xC8},
+	{2,0x06,0x19,0x0E},
+	{2,0x28,0x00,0x12},
+	{2,0x07,0x00,0xE1},
+	{2,0x08,0x00,0xE2},
+	{2,0x09,0x00,0xE3},
+	{2,0x0A,0x00,0xE4},
+	{2,0x0B,0x00,0xE5},
+	{2,0x0C,0x00,0xE6},
+	{2,0x0D,0x00,0xE7},
+	{2,0x0E,0x00,0xE8},
+	{2,0x0F,0x00,0xE9},
+	{2,0x10,0x00,0xEA},
+	{2,0x11,0x00,0xEB},
+	{2,0x12,0x00,0xEC},
+	{2,0x13,0x00,0xED},
+	{2,0x14,0x00,0xEE},
+	{2,0x15,0x00,0xEF},
+	{2,0x16,0x00,0xF0},
+	{2,0x17,0x00,0xF1},
+	{2,0x18,0x00,0xF2},
+	{2,0x19,0x00,0xF3},
+	{2,0x1A,0x00,0xF4},
+	{2,0x1B,0x00,0xF5},
+	{2,0x1C,0x00,0xF6},
+	{2,0x1D,0x00,0xF7},
+	{2,0x1E,0x00,0xF8},
+	{2,0x1F,0x00,0xF9},
+	{2,0x20,0x00,0xFA},
+	{2,0xD7,0x00,0x02},
+	{2,0xD8,0x00,0x07},
+	{2,0xDB,0x00,0x02},
+	{2,0x30,0x08,0x0D},
+	{2,0x34,0xC6,0x40},
+	{2,0x36,0x00,0x1A},
+	{2,0x3A,0x00,0x00},
+	{2,0x65,0x00,0x04},
+	{2,0x66,0x27,0xF0},
+	{2,0x67,0x27,0x60},
+	{2,0x7A,0xFF,0xFF},
+	{2,0x7B,0x00,0x03},
+	{2,0x25,0x00,0x0C},
+	{2,0x04,0x00,0x01},
+	{2,0xFF,0x00,0xC8},
 };
 
 const struct ChipSetting Resume[]={
-    { 2,0x04,0x00,0x01},
+	{ 2,0x04,0x00,0x01},
 };
 
 const struct ChipSetting Suspend[] ={
-    { 2,0x05,0x00,0x01},
+	{ 2,0x05,0x00,0x01},
 };
 
 struct ssl_ts_priv {
@@ -138,12 +137,12 @@ static int ssd_i2c_transfer(struct i2c_client *client, struct i2c_msg *msgs, int
 	while(count >= 0)
 	{
 		count-= 1;
-        ret = i2c_transfer(client->adapter, msgs, cnt);
-        if(ret < 0)
+		ret = i2c_transfer(client->adapter, msgs, cnt);
+		if(ret < 0)
 		{
-            msleep(50);
+			msleep(50);
 			continue;
-        }
+		}
 		break;
 	}
 	return ret;
@@ -152,7 +151,7 @@ static int ssd_i2c_transfer(struct i2c_client *client, struct i2c_msg *msgs, int
 static int ssd_i2c_read(struct i2c_client *client, uint8_t cmd, uint8_t *data, int length)
 {
 	int ret;
-    struct i2c_msg msgs[] =
+	struct i2c_msg msgs[] =
 	{
 		{	.addr = client->addr,
 			.flags = 0,
@@ -164,9 +163,9 @@ static int ssd_i2c_read(struct i2c_client *client, uint8_t cmd, uint8_t *data, i
 			.len = length,
 			.buf = data,
 		}
-    };
+	};
 
-    ret = ssd_i2c_transfer(client, msgs, 2);
+	ret = ssd_i2c_transfer(client, msgs, 2);
 	if(ret < 0)
 	{
 		printk(SSD_ERROR_LEVEL "%s, i2c read error, ret %d\n", __func__, ret);
@@ -186,21 +185,21 @@ static int ssd_i2c_write(struct i2c_client *client, uint8_t cmd, uint8_t *data, 
 			.len = length+1,
 			.buf = buf,
 		},
-    };
+	};
 
-    if (cmd == 0xFF)
-    {
-        mdelay(data[0]*256 + data[1]);
-        return 0;
-    }
+	if (cmd == 0xFF)
+	{
+		mdelay(data[0]*256 + data[1]);
+		return 0;
+	}
 
 	buf[0] = cmd;
 	for(i = 0; i < length; i++)
-    {
+	{
 		buf[1+i] = data[i];
 	}
 
-    ret = ssd_i2c_transfer(client, msgs, 1);
+	ret = ssd_i2c_transfer(client, msgs, 1);
 	if(ret < 0)
 	{
 		printk(SSD_ERROR_LEVEL "%s, i2c read error, ret %d\n", __func__, ret);
@@ -214,7 +213,7 @@ static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 	int i;
 
 	// read firmware version
-    if(ssd_i2c_read(ts->client, DEVICE_ID_REG, buf, 2) < 0)
+	if(ssd_i2c_read(ts->client, DEVICE_ID_REG, buf, 2) < 0)
 	{
 		return -1;
 	}
@@ -222,7 +221,7 @@ static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 	printk(SSD_DEBUG_LEVEL "%s, chip ID %X%X\n", __func__, buf[0], buf[1]);
 
 	// read firmware version
-    if(ssd_i2c_read(ts->client, VERSION_ID_REG, buf, 2) < 0)
+	if(ssd_i2c_read(ts->client, VERSION_ID_REG, buf, 2) < 0)
 	{
 		return -1;
 	}
@@ -248,7 +247,7 @@ static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 			printk(SSD_DEBUG_LEVEL "%s, reg %X %X:%X\n", __func__, ssdcfgTable[i].Reg, buf[0], buf[1]);
 	}
 
-    if(ssd_i2c_read(ts->client, DEVICE_CHANEL_REG, buf, 2) < 0)
+	if(ssd_i2c_read(ts->client, DEVICE_CHANEL_REG, buf, 2) < 0)
 	{
 		return -1;
 	}
@@ -303,14 +302,14 @@ static void ssd_ts_work(struct work_struct *work)
 {
 	struct ssl_ts_priv *ts = container_of(work,struct ssl_ts_priv,ssl_work);
 
-    unsigned char buf[9]={0};
+	unsigned char buf[9]={0};
 	int send_report = 0;
-    int i;
-    unsigned short xpos = 0, ypos = 0, width = 0;
-    int EventStatus,EventChange;
-    int FingerX[FINGERNO];
-    int FingerY[FINGERNO];
-    int FingerP[FINGERNO];
+	int i;
+	unsigned short xpos = 0, ypos = 0, width = 0;
+	int EventStatus,EventChange;
+	int FingerX[FINGERNO];
+	int FingerY[FINGERNO];
+	int FingerP[FINGERNO];
 	int ret;
 
 	// read i2c data from device
@@ -325,34 +324,34 @@ static void ssd_ts_work(struct work_struct *work)
 	// printk(SSD_DEBUG_LEVEL "%s, STATUS%X buf[0]%X buf[1]%X\n", __func__, EventStatus, buf[0], buf[1]);
 
 	for (i = 0; i < FINGERNO; i++)
-    {
-        if ((EventStatus >> i) & 0x1)
-        {
-            ret = ssd_i2c_read(ts->client, FINGER00_REG+i, buf, 4);
+	{
+		if ((EventStatus >> i) & 0x1)
+		{
+			ret = ssd_i2c_read(ts->client, FINGER00_REG+i, buf, 4);
 
 			if(ret < 0)
 			{
 				return;
 			}
-            xpos = ((buf[2] & 0xf0) << 4) | buf[0];
-            ypos = ((buf[2] & 0x0f) << 8) | buf[1];
-            width = buf[3];
-        }
-        else
-        {
-            xpos = ypos = 0xFFF;
-            width = 0;
-        }
-        FingerX[i] = xpos;
-        FingerY[i] = ypos;
-        FingerP[i] = width;
-    }
+			xpos = ((buf[2] & 0xf0) << 4) | buf[0];
+			ypos = ((buf[2] & 0x0f) << 8) | buf[1];
+			width = buf[3];
+		}
+		else
+		{
+			xpos = ypos = 0xFFF;
+			width = 0;
+		}
+		FingerX[i] = xpos;
+		FingerY[i] = ypos;
+		FingerP[i] = width;
+	}
 
 	for (i = 0; i < FINGERNO; i++)
-    {
-        xpos = FingerX[i];
-        ypos = FingerY[i];
-        width = FingerP[i];
+	{
+		xpos = FingerX[i];
+		ypos = FingerY[i];
+		width = FingerP[i];
 
 		EventChange = ((preEventStatus ^ EventStatus)>> i)&0x0001;
 
@@ -364,12 +363,12 @@ static void ssd_ts_work(struct work_struct *work)
 		if (xpos != 0xFFF)					// touch down , report
 		{
 			send_report = 1;
-            input_report_abs(ts->input, ABS_MT_TRACKING_ID, i);
+			input_report_abs(ts->input, ABS_MT_TRACKING_ID, i);
 			input_report_abs(ts->input, ABS_MT_TOUCH_MAJOR, 1);
 			input_report_abs(ts->input, ABS_MT_WIDTH_MAJOR, width);
-            input_report_abs(ts->input, ABS_MT_POSITION_X, xpos);
-            input_report_abs(ts->input, ABS_MT_POSITION_Y, ypos);
-            input_report_abs(ts->input, ABS_MT_PRESSURE, width);
+			input_report_abs(ts->input, ABS_MT_POSITION_X, xpos);
+			input_report_abs(ts->input, ABS_MT_POSITION_Y, ypos);
+			input_report_abs(ts->input, ABS_MT_PRESSURE, width);
 			input_report_key(ts->input, BTN_TOUCH, 1);
 			input_mt_sync(ts->input);
 			printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
@@ -377,7 +376,7 @@ static void ssd_ts_work(struct work_struct *work)
 		else if (EventChange)				// touch up
 		{
 			send_report = 1;
-            input_report_abs(ts->input, ABS_MT_TRACKING_ID, i);
+			input_report_abs(ts->input, ABS_MT_TRACKING_ID, i);
 			input_report_key(ts->input, BTN_TOUCH, 0);
 			input_mt_sync(ts->input);
 			printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
@@ -388,9 +387,9 @@ static void ssd_ts_work(struct work_struct *work)
 		{
 			if (xpos != 0xFFF)					// touch down , report
 			{
-                input_report_abs(ts->input, ABS_X, xpos);
-                input_report_abs(ts->input, ABS_Y, ypos);
-                input_report_abs(ts->input, ABS_PRESSURE, width);
+				input_report_abs(ts->input, ABS_X, xpos);
+				input_report_abs(ts->input, ABS_Y, ypos);
+				input_report_abs(ts->input, ABS_PRESSURE, width);
 				input_report_key(ts->input, BTN_TOUCH, 1);
 				send_report = 1;
 				printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
@@ -406,7 +405,7 @@ static void ssd_ts_work(struct work_struct *work)
 			}
 		}
 		#endif	// MT_SUPPORT
-    }
+	}
 
 	if(send_report==1)
 		input_sync(ts->input);
@@ -434,7 +433,7 @@ static int ssd2543_probe(struct i2c_client *client,
 
 	printk(SSD_DEBUG_LEVEL "%s\n",__func__);
 	if (!i2c_check_functionality(client->adapter,
-				     I2C_FUNC_SMBUS_READ_WORD_DATA)) {
+					 I2C_FUNC_SMBUS_READ_WORD_DATA)) {
 		printk(SSD_ERROR_LEVEL "%s: i2c_check_functionality failed\n", __func__);
 		return -EIO;
 	}
