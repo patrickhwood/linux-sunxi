@@ -313,20 +313,6 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 		I2C_BOARD_INFO("ssd2543", 0x48),
 		.irq = gpio_to_irq(UIB_TOUCH_IRQ),
 	},
-#ifdef SABRE
-	{
-		I2C_BOARD_INFO("egalax_ts", 0x4),
-		.irq = gpio_to_irq(SABRESD_CAP_TCH_INT1),
-	},
-	{
-		I2C_BOARD_INFO("elan-touch", 0x10),
-		.irq = gpio_to_irq(SABRESD_ELAN_INT),
-	},
-	{
-		I2C_BOARD_INFO("mxc_ldb_i2c", 0x50),
-		.platform_data = (void *)1,	/* lvds port1 */
-	},
-#endif
 };
 
 static void imx6q_sabresd_usbotg_vbus(bool on)
@@ -1151,21 +1137,23 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_imx_i2c(2, &mx6q_sabresd_i2c_data);
 	if (cpu_is_mx6dl())
 		imx6q_add_imx_i2c(3, &mx6q_sabresd_i2c_data);
+
+	gpio_request(UIB_TOUCH_RESET, "SSD-RESET");
+	gpio_direction_output(UIB_TOUCH_RESET, 1);
+	mdelay(5);
+	gpio_set_value(UIB_TOUCH_RESET, 0);
+	mdelay(5);
+	gpio_set_value(UIB_TOUCH_RESET, 1);
+	mdelay(20);
+	gpio_request(UIB_TOUCH_IRQ, "SSD-IRQ");
+
 	i2c_register_board_info(0, mxc_i2c0_board_info,
 			ARRAY_SIZE(mxc_i2c0_board_info));
 	i2c_register_board_info(1, mxc_i2c1_board_info,
 			ARRAY_SIZE(mxc_i2c1_board_info));
 	i2c_register_board_info(2, mxc_i2c2_board_info,
 			ARRAY_SIZE(mxc_i2c2_board_info));
-#ifdef SABRE
-	if (gpio_request(SABRESD_PFUZE_INT, "pFUZE-int")) {
-		printk(KERN_ERR"request pFUZE-int error!!\n");
-		return;
-	} else {
-		gpio_direction_input(SABRESD_PFUZE_INT);
-		mx6q_sabresd_init_pfuze100(SABRESD_PFUZE_INT);
-	}
-#endif
+
 	/* SPI */
 	imx6q_add_ecspi(0, &mx6q_sabresd_spi_data);
 	spi_device_init();

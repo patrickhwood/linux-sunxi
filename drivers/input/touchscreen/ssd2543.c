@@ -54,9 +54,6 @@
 #define FINGER00_REG       0x7C
 #define DEVICE_CHANEL_REG  0x06
 
-#define GPIO_IRQ	IMX_GPIO_NR(3, 23)   //irq
-#define GPIO_RESET	IMX_GPIO_NR(3, 24)    //reset
-
 struct ChipSetting
 {
 	char No;
@@ -479,14 +476,6 @@ static int ssd2543_probe(struct i2c_client *client,
 	input_set_abs_params(input_dev, ABS_PRESSURE, 0, MAX_PRESSURE, 0, 0);
 #endif
 
-	gpio_request(GPIO_RESET, "SSD-RESET");
-	gpio_direction_output(GPIO_RESET, 1);
-	mdelay(5);
-	gpio_set_value(GPIO_RESET, 0);
-	mdelay(5);
-	gpio_set_value(GPIO_RESET, 1);
-	mdelay(20);
-
 	ssd_i2c_read_tp_info(ts);
 	ssd_tp_init(ts);
 	ssd_i2c_read_tp_info(ts);
@@ -500,13 +489,6 @@ static int ssd2543_probe(struct i2c_client *client,
 	{
 		printk(SSD_ERROR_LEVEL "%s: request irq pin failed\n", __func__);
 		err = -ENODEV;
-		goto err_free_mem;
-	}
-
-	err = gpio_request(GPIO_IRQ, "SSD-IRQ");
-	if (err < 0)
-	{
-		printk(SSD_ERROR_LEVEL "%s: request IO failed\n", __func__);
 		goto err_free_mem;
 	}
 
@@ -542,8 +524,6 @@ static int ssd2543_remove(struct i2c_client *client)
 {
 	struct ssl_ts_priv	*ts = i2c_get_clientdata(client);
 
-	free_irq(gpio_to_irq(GPIO_IRQ), NULL);
-	free_irq(ts->irq, ts);
 	hrtimer_cancel(&ts->timer);
 	input_unregister_device(ts->input);
 	kfree(ts);
