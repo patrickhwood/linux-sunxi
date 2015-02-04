@@ -32,7 +32,6 @@
 #include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/regulator/consumer.h>
-#include <asm/gpio.h>
 #include <mach/hardware.h>
 
 #define TS_POLL_DELAY	(50 * 1000 * 1000)	/* ns delay before the first sample */
@@ -118,7 +117,9 @@ const struct ChipSetting Suspend[] ={
 
 struct ssl_ts_priv {
 	struct input_dev	*input;
+#ifdef SSD_POLL
 	struct hrtimer		timer;
+#endif
 	struct work_struct  ssl_work;
 	struct i2c_client	*client;
 	spinlock_t			lock;
@@ -275,26 +276,6 @@ static int ssd_tp_init(struct ssl_ts_priv *ts)
 	return 0;
 }
 
-static irqreturn_t ssd_ts_irq(int irq, void *handle)
-{
-	struct ssl_ts_priv *ts = handle;
-	unsigned long flags;
-
-	spin_lock_irqsave(&ts->lock, flags);
-	printk(SSD_ERROR_LEVEL "%s\n", __func__);
-
-//	if (likely(ts->get_pendown_state()))
-	{
-		// disable_irq(ts->irq);
-		// hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_DELAY),
-		// 			HRTIMER_MODE_REL);
-	}
-
-	spin_unlock_irqrestore(&ts->lock, flags);
-
-	return IRQ_HANDLED;
-}
-
 static void ssd_ts_work(struct work_struct *work)
 {
 	struct ssl_ts_priv *ts = container_of(work,struct ssl_ts_priv,ssl_work);
@@ -407,11 +388,24 @@ static void ssd_ts_work(struct work_struct *work)
 	if(send_report==1)
 		input_sync(ts->input);
 
+#ifdef SSD_POLL
 	hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_PERIOD), HRTIMER_MODE_REL);
+#endif
 
 	return;
 }
 
+static irqreturn_t ssd_ts_irq(int irq, void *handle)
+{
+	struct ssl_ts_priv *ts = handle;
+
+	printk(SSD_ERROR_LEVEL "%s\n", __func__);
+	queue_work(ssd253x_wq, &ts->ssl_work);
+
+	return IRQ_HANDLED;
+}
+
+#ifdef SSD_POLL
 static enum hrtimer_restart ssd_ts_timer(struct hrtimer *timer)
 {
 	struct ssl_ts_priv *ts = container_of(timer, struct ssl_ts_priv, timer);
@@ -420,6 +414,7 @@ static enum hrtimer_restart ssd_ts_timer(struct hrtimer *timer)
 	queue_work(ssd253x_wq, &ts->ssl_work);
 	return HRTIMER_NORESTART;
 }
+#endif
 
 static int ssd2543_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
@@ -448,8 +443,10 @@ static int ssd2543_probe(struct i2c_client *client,
 
 	ts->input = input_dev;
 
+#ifdef SSD_POLL
 	hrtimer_init(&ts->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	ts->timer.function = ssd_ts_timer ;			//ssd2543_timer;
+#endif
 
 	spin_lock_init(&ts->lock);
 
@@ -480,10 +477,12 @@ static int ssd2543_probe(struct i2c_client *client,
 	ssd_tp_init(ts);
 	ssd_i2c_read_tp_info(ts);
 
-	hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_PERIOD), HRTIMER_MODE_REL);
-
 	INIT_WORK(&ts->ssl_work, ssd_ts_work);	// Intialize the work queue
 
+#ifdef SSD_POLL
+	hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_PERIOD), HRTIMER_MODE_REL);
+	disable_irq_nosync(ts->irq);
+#else
 	ts->irq = client->irq;
 	if (ts->irq < 0)
 	{
@@ -498,7 +497,8 @@ static int ssd2543_probe(struct i2c_client *client,
 		goto err_free_mem;
 	}
 
-	// disable_irq_nosync(ts->irq);
+	dev_info(&client->dev, "registered with irq (%d)\n", ts->irq);
+#endif
 
 	err = input_register_device(input_dev);
 	if (err) {
@@ -506,14 +506,18 @@ static int ssd2543_probe(struct i2c_client *client,
 		goto err_free_irq;
 	}
 
-	dev_info(&client->dev, "registered with irq (%d)\n", ts->irq);
-
 	return 0;
 
  err_free_irq:
-	free_irq(ts->irq, ts);
+#ifdef SSD_POLL
 	hrtimer_cancel(&ts->timer);
+#else
+	free_irq(ts->irq, ts);
+#endif
  err_free_mem:
+	if (ssd253x_wq)
+		destroy_workqueue(ssd253x_wq);
+	ssd253x_wq = NULL;
 	input_free_device(input_dev);
 	kfree(ts);
 	printk(SSD_ERROR_LEVEL "%s: failed, err = %d\n", __func__, err);
@@ -524,7 +528,14 @@ static int ssd2543_remove(struct i2c_client *client)
 {
 	struct ssl_ts_priv	*ts = i2c_get_clientdata(client);
 
+#ifdef SSD_POLL
 	hrtimer_cancel(&ts->timer);
+#else
+	free_irq(ts->irq, ts);
+#endif
+	if (ssd253x_wq)
+		destroy_workqueue(ssd253x_wq);
+	ssd253x_wq = NULL;
 	input_unregister_device(ts->input);
 	kfree(ts);
 
