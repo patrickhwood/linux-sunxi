@@ -43,8 +43,6 @@
 
 #define SSD_I2C_RETRY_COUNT   3
 #define SSD_I2C_DRIVER_NAME   "ssd2543"
-#define SSD_DEBUG_LEVEL   KERN_INFO
-#define SSD_ERROR_LEVEL   KERN_ALERT
 #define FINGERNO 5
 
 #define DEVICE_ID_REG      0x02
@@ -166,7 +164,7 @@ static int ssd_i2c_read(struct i2c_client *client, uint8_t cmd, uint8_t *data, i
 	ret = ssd_i2c_transfer(client, msgs, 2);
 	if(ret < 0)
 	{
-		printk(SSD_ERROR_LEVEL "%s, i2c read error, ret %d\n", __func__, ret);
+		dev_err(&client->dev, "%s, i2c read error, ret %d\n", __func__, ret);
 	}
 	return ret;
 }
@@ -200,7 +198,7 @@ static int ssd_i2c_write(struct i2c_client *client, uint8_t cmd, uint8_t *data, 
 	ret = ssd_i2c_transfer(client, msgs, 1);
 	if(ret < 0)
 	{
-		printk(SSD_ERROR_LEVEL "%s, i2c read error, ret %d\n", __func__, ret);
+		dev_err(&client->dev, "%s, i2c read error, ret %d\n", __func__, ret);
 	}
 	return ret;
 }
@@ -216,7 +214,7 @@ static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 		return -1;
 	}
 
-	printk(SSD_DEBUG_LEVEL "%s, chip ID %X%X\n", __func__, buf[0], buf[1]);
+	dev_info(&ts->client->dev, "%s, chip ID %X%X\n", __func__, buf[0], buf[1]);
 
 	// read firmware version
 	if(ssd_i2c_read(ts->client, VERSION_ID_REG, buf, 2) < 0)
@@ -224,9 +222,9 @@ static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 		return -1;
 	}
 
-	printk(SSD_DEBUG_LEVEL "%s, version ID %X:%X\n", __func__, buf[0], buf[1]);
+	dev_info(&ts->client->dev, "%s, version ID %X:%X\n", __func__, buf[0], buf[1]);
 
-#ifdef CONFIG_SSD_TOUCH_DEBUG
+#ifdef VERBOSE_DEBUG
 /* dump all register values from ssdcfgTable to verify settings */
 	for (i = 0; i < sizeof(ssdcfgTable)/sizeof(ssdcfgTable[0]); i++)
 	{
@@ -240,9 +238,9 @@ static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 		}
 
 		if (ssd_i2c_read(ts->client,ssdcfgTable[i].Reg, buf, 2) < 0)
-			printk(SSD_DEBUG_LEVEL "%s, reg %X: read error\n", __func__, ssdcfgTable[i].Reg);
+			dev_vdbg(&ts->client->dev, "%s, reg %X: read error\n", __func__, ssdcfgTable[i].Reg);
 		else
-			printk(SSD_DEBUG_LEVEL "%s, reg %X %X:%X\n", __func__, ssdcfgTable[i].Reg, buf[0], buf[1]);
+			dev_vdbg(&ts->client->dev, "%s, reg %X %X:%X\n", __func__, ssdcfgTable[i].Reg, buf[0], buf[1]);
 	}
 
 	if(ssd_i2c_read(ts->client, DEVICE_CHANEL_REG, buf, 2) < 0)
@@ -250,8 +248,8 @@ static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 		return -1;
 	}
 
-	printk(SSD_DEBUG_LEVEL "%s, Drive:%d Sense:%d\n", __func__, buf[0], buf[1]);
-#endif
+	dev_vdbg(&ts->client->dev, "%s, Drive:%d Sense:%d\n", __func__, buf[0], buf[1]);
+#endif /* VERBOSE_DEBUG */
 
 	return 0;
 }
@@ -261,7 +259,7 @@ static int ssd_tp_init(struct ssl_ts_priv *ts)
 	unsigned char buf[4]={0};
 	int i;
 
-	printk(SSD_DEBUG_LEVEL "%s    \n", __func__);
+	dev_info(&ts->client->dev, "%s    \n", __func__);
 
 	//init chip config
 	for (i = 0; i < sizeof(ssdcfgTable)/sizeof(ssdcfgTable[0]); i++)
@@ -299,7 +297,7 @@ static void ssd_ts_work(struct work_struct *work)
 
 	EventStatus = ((int)buf[0] << 8 | buf[1]) >> 4;
 
-	// printk(SSD_DEBUG_LEVEL "%s, STATUS%X buf[0]%X buf[1]%X\n", __func__, EventStatus, buf[0], buf[1]);
+	// dev_dbg(&ts->client->dev, "%s, STATUS%X buf[0]%X buf[1]%X\n", __func__, EventStatus, buf[0], buf[1]);
 
 	for (i = 0; i < FINGERNO; i++)
 	{
@@ -349,7 +347,7 @@ static void ssd_ts_work(struct work_struct *work)
 			input_report_abs(ts->input, ABS_MT_PRESSURE, width);
 			input_report_key(ts->input, BTN_TOUCH, 1);
 			input_mt_sync(ts->input);
-			printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
+			dev_dbg(&ts->client->dev, "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 		}
 		else if (EventChange)				// touch up
 		{
@@ -357,7 +355,7 @@ static void ssd_ts_work(struct work_struct *work)
 			input_report_abs(ts->input, ABS_MT_TRACKING_ID, i);
 			input_report_key(ts->input, BTN_TOUCH, 0);
 			input_mt_sync(ts->input);
-			printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
+			dev_dbg(&ts->client->dev, "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 		}
 
 		#else	// MT_SUPPORT
@@ -370,7 +368,7 @@ static void ssd_ts_work(struct work_struct *work)
 				input_report_abs(ts->input, ABS_PRESSURE, width);
 				input_report_key(ts->input, BTN_TOUCH, 1);
 				send_report = 1;
-				printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
+				dev_dbg(&ts->client->dev, "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 
 			}
 			else if (EventChange)				// touch up/down change
@@ -379,7 +377,7 @@ static void ssd_ts_work(struct work_struct *work)
 				ypos = 0;
 				input_report_key(ts->input, BTN_TOUCH, 0);
 				send_report = 1;
-				printk(SSD_DEBUG_LEVEL "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
+				dev_dbg(&ts->client->dev, "%s, ID:%d X:%d Y:%d Z:%d\n", __func__, i, xpos, ypos,width);
 			}
 		}
 		#endif	// MT_SUPPORT
@@ -399,7 +397,7 @@ static irqreturn_t ssd_ts_irq(int irq, void *handle)
 {
 	struct ssl_ts_priv *ts = handle;
 
-	printk(SSD_ERROR_LEVEL "%s\n", __func__);
+	dev_dbg(&ts->client->dev, "%s\n", __func__);
 	queue_work(ssd253x_wq, &ts->ssl_work);
 
 	return IRQ_HANDLED;
@@ -409,7 +407,7 @@ static irqreturn_t ssd_ts_irq(int irq, void *handle)
 static enum hrtimer_restart ssd_ts_timer(struct hrtimer *timer)
 {
 	struct ssl_ts_priv *ts = container_of(timer, struct ssl_ts_priv, timer);
-	// printk(SSD_DEBUG_LEVEL "%s\n",__func__);
+	// dev_dbg(ts->client->dev, "%s\n",__func__);
 
 	queue_work(ssd253x_wq, &ts->ssl_work);
 	return HRTIMER_NORESTART;
@@ -423,17 +421,17 @@ static int ssd2543_probe(struct i2c_client *client,
 	struct input_dev *input_dev;
 	int err = 0;
 
-	printk(SSD_DEBUG_LEVEL "%s\n",__func__);
+	dev_err(&client->dev, "%s\n",__func__);
 	if (!i2c_check_functionality(client->adapter,
 					 I2C_FUNC_SMBUS_READ_WORD_DATA)) {
-		printk(SSD_ERROR_LEVEL "%s: i2c_check_functionality failed\n", __func__);
+		dev_err(&client->dev, "%s: i2c_check_functionality failed\n", __func__);
 		return -EIO;
 	}
 
 	ts = kzalloc(sizeof(struct ssl_ts_priv), GFP_KERNEL);
 	input_dev = input_allocate_device();
 	if (!ts || !input_dev) {
-		printk(SSD_ERROR_LEVEL "%s: kzalloc failed\n", __func__);
+		dev_err(&client->dev, "%s: kzalloc failed\n", __func__);
 		err = -ENOMEM;
 		goto err_free_mem;
 	}
@@ -486,23 +484,23 @@ static int ssd2543_probe(struct i2c_client *client,
 	ts->irq = client->irq;
 	if (ts->irq < 0)
 	{
-		printk(SSD_ERROR_LEVEL "%s: request irq pin failed\n", __func__);
+		dev_err(&client->dev, "%s: request irq pin failed\n", __func__);
 		err = -ENODEV;
 		goto err_free_mem;
 	}
 
 	err = request_irq(ts->irq, ssd_ts_irq, IRQF_TRIGGER_FALLING, client->name, ts);
 	if (err < 0){
-		printk(SSD_ERROR_LEVEL "%s: request IRQ failed\n", __func__);
+		dev_err(&client->dev, "%s: request IRQ failed\n", __func__);
 		goto err_free_mem;
 	}
 
-	dev_info(&client->dev, "registered with irq (%d)\n", ts->irq);
+	dev_warn(&client->dev, "registered with irq (%d)\n", ts->irq);
 #endif
 
 	err = input_register_device(input_dev);
 	if (err) {
-		printk(SSD_ERROR_LEVEL "%s: input_register_device failed\n", __func__);
+		dev_err(&client->dev, "%s: input_register_device failed\n", __func__);
 		goto err_free_irq;
 	}
 
@@ -520,7 +518,7 @@ static int ssd2543_probe(struct i2c_client *client,
 	ssd253x_wq = NULL;
 	input_free_device(input_dev);
 	kfree(ts);
-	printk(SSD_ERROR_LEVEL "%s: failed, err = %d\n", __func__, err);
+	dev_err(&client->dev, "%s: failed, err = %d\n", __func__, err);
 	return err;
 }
 
