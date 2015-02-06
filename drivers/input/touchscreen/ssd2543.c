@@ -41,8 +41,6 @@
 #define MAX_PRESSURE 200
 #define MT_SUPPORT
 
-#define SSD_I2C_RETRY_COUNT   3
-#define SSD_I2C_DRIVER_NAME   "ssd2543"
 #define FINGERNO 5
 
 #define DEVICE_ID_REG      0x02
@@ -59,7 +57,7 @@ struct ChipSetting
 	char Data2;
 };
 
-const struct ChipSetting ssdcfgTable[] = {
+static const struct ChipSetting ssdcfgTable[] = {
 	{2,0x06,0x19,0x0E},
 	{2,0x28,0x00,0x12},
 	{2,0x07,0x00,0xE1},
@@ -105,11 +103,11 @@ const struct ChipSetting ssdcfgTable[] = {
 	{2,0xFF,0x00,0xC8},
 };
 
-const struct ChipSetting Resume[]={
+static const struct ChipSetting Resume[]={
 	{ 2,0x04,0x00,0x01},
 };
 
-const struct ChipSetting Suspend[] ={
+static const struct ChipSetting Suspend[] ={
 	{ 2,0x05,0x00,0x01},
 };
 
@@ -149,12 +147,14 @@ static int ssd_i2c_read(struct i2c_client *client, uint8_t cmd, uint8_t *data, i
 	int ret;
 	struct i2c_msg msgs[] =
 	{
-		{	.addr = client->addr,
+		{
+			.addr = client->addr,
 			.flags = 0,
 			.len = 1,
 			.buf = &cmd,
 		},
-		{	.addr = client->addr,
+		{
+			.addr = client->addr,
 			.flags = I2C_M_RD,
 			.len = length,
 			.buf = data,
@@ -176,7 +176,8 @@ static int ssd_i2c_write(struct i2c_client *client, uint8_t cmd, uint8_t *data, 
 	unsigned char buf[9]={0};
 	struct i2c_msg msgs[] =
 	{
-		{	.addr = client->addr,
+		{
+			.addr = client->addr,
 			.flags = 0,
 			.len = length+1,
 			.buf = buf,
