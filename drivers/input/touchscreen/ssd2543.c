@@ -39,7 +39,7 @@
 #define MAX_X        1023
 #define MAX_Y        599
 #define MAX_PRESSURE 200
-#define MT_SUPPORT
+// #define MT_SUPPORT
 
 #define FINGERNO 5
 
