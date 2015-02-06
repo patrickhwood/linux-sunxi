@@ -1188,7 +1188,7 @@ void gpmi_begin(struct gpmi_nand_data *this)
 
 	/* [1] Set HW_GPMI_TIMING0 */
 	reg = BF_GPMI_TIMING0_ADDRESS_SETUP(hw.address_setup_in_cycles) |
-		BF_GPMI_TIMING0_DATA_HOLD(hw.data_hold_in_cycles + 3)       |
+		BF_GPMI_TIMING0_DATA_HOLD(hw.data_hold_in_cycles)         |
 		BF_GPMI_TIMING0_DATA_SETUP(hw.data_setup_in_cycles)       ;
 
 	writel(reg, gpmi_regs + HW_GPMI_TIMING0);
