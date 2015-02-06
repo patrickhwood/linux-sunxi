@@ -94,6 +94,13 @@
 #define UIB_TOUCH_IRQ    IMX_GPIO_NR(3, 23)
 #define UIB_TOUCH_RESET  IMX_GPIO_NR(3, 24)
 
+#define UIB_RFID_CS0    IMX_GPIO_NR(5, 17)
+#define UIB_RFID_EN     IMX_GPIO_NR(3, 30)
+#define UIB_RFID_EN2    -1
+#define UIB_RFID_IRQ    IMX_GPIO_NR(3, 31)
+#define UIB_RFID_MOD    IMX_GPIO_NR(4, 29)
+#define UIB_RFID_ASKOOK IMX_GPIO_NR(4, 30)
+
 #define SABRESD_POWER_OFF	IMX_GPIO_NR(3, 8)
 #define SABRESD_INFO		IMX_GPIO_NR(3, 9)
 
@@ -119,7 +126,6 @@
 #define SABRESD_USB_H1_PWR	IMX_GPIO_NR(1, 29)
 
 #define SABRESD_CAN1_STBY	IMX_GPIO_NR(4, 5)
-#define SABRESD_ECSPI1_CS0  IMX_GPIO_NR(4, 9)
 #define SABRESD_CODEC_PWR_EN	IMX_GPIO_NR(4, 10)
 #define SABRESD_HDMI_CEC_IN	IMX_GPIO_NR(4, 11)
 #define SABRESD_PCIE_DIS_B	IMX_GPIO_NR(4, 14)
@@ -244,53 +250,37 @@ static struct fec_platform_data fec_data __initdata = {
 };
 #endif
 
-static int mx6q_sabresd_spi_cs[] = {
-	SABRESD_ECSPI1_CS0,
+static int mx6q_uib_spi_cs[] = {
+	UIB_RFID_CS0,
 };
 
-static const struct spi_imx_master mx6q_sabresd_spi_data __initconst = {
-	.chipselect     = mx6q_sabresd_spi_cs,
-	.num_chipselect = ARRAY_SIZE(mx6q_sabresd_spi_cs),
+static const struct spi_imx_master mx6q_uib_spi_data __initconst = {
+	.chipselect     = mx6q_uib_spi_cs,
+	.num_chipselect = ARRAY_SIZE(mx6q_uib_spi_cs),
 };
 
-#if defined(CONFIG_MTD_M25P80) || defined(CONFIG_MTD_M25P80_MODULE)
-static struct mtd_partition imx6_sabresd_spi_nor_partitions[] = {
+static struct spi_board_info imx6_uib_spi_nfc_device[] __initdata = {
 	{
-	 .name = "bootloader",
-	 .offset = 0,
-	 .size = 0x00100000,
-	},
-	{
-	 .name = "kernel",
-	 .offset = MTDPART_OFS_APPEND,
-	 .size = MTDPART_SIZ_FULL,
-	},
-};
-
-static struct flash_platform_data imx6_sabresd__spi_flash_data = {
-	.name = "m25p80",
-	.parts = imx6_sabresd_spi_nor_partitions,
-	.nr_parts = ARRAY_SIZE(imx6_sabresd_spi_nor_partitions),
-	.type = "sst25vf016b",
-};
-#endif
-
-static struct spi_board_info imx6_sabresd_spi_nor_device[] __initdata = {
-#if defined(CONFIG_MTD_M25P80)
-	{
-		.modalias = "m25p80",
-		.max_speed_hz = 20000000, /* max spi clock (SCK) speed in HZ */
+		.modalias = "trf7970a",
+		.max_speed_hz = 2000000,	/* max spi clock speed (2MHz) */
 		.bus_num = 0,
 		.chip_select = 0,
-		.platform_data = &imx6_sabresd__spi_flash_data,
+		.irq = gpio_to_irq(UIB_RFID_IRQ),
 	},
-#endif
 };
 
 static void spi_device_init(void)
 {
-	spi_register_board_info(imx6_sabresd_spi_nor_device,
-				ARRAY_SIZE(imx6_sabresd_spi_nor_device));
+	/* pull MOD and ASK/OOK high */
+	gpio_direction_output(UIB_RFID_MOD, 1);
+	gpio_direction_output(UIB_RFID_ASKOOK, 1);
+
+	/* enable RFID */
+	gpio_direction_output(UIB_RFID_EN, 1);
+
+	/* register driver */
+	spi_register_board_info(imx6_uib_spi_nfc_device,
+				ARRAY_SIZE(imx6_uib_spi_nfc_device));
 }
 
 static struct imxi2c_platform_data mx6q_sabresd_i2c_data = {
@@ -1155,7 +1145,7 @@ static void __init mx6_sabresd_board_init(void)
 			ARRAY_SIZE(mxc_i2c2_board_info));
 
 	/* SPI */
-	imx6q_add_ecspi(0, &mx6q_sabresd_spi_data);
+	imx6q_add_ecspi(0, &mx6q_uib_spi_data);
 	spi_device_init();
 
 	imx6q_add_mxc_hdmi(&hdmi_data);
