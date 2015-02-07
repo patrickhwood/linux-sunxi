@@ -298,10 +298,13 @@ static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
 #endif
 };
 
+static unsigned int SSD_platform_data[1] = {UIB_TOUCH_RESET};
+
 static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	{
 		I2C_BOARD_INFO("ssd2543", 0x48),
 		.irq = gpio_to_irq(UIB_TOUCH_IRQ),
+		.platform_data = SSD_platform_data,
 	},
 };
 
@@ -1129,12 +1132,6 @@ static void __init mx6_sabresd_board_init(void)
 		imx6q_add_imx_i2c(3, &mx6q_sabresd_i2c_data);
 
 	gpio_request(UIB_TOUCH_RESET, "SSD-RESET");
-	gpio_direction_output(UIB_TOUCH_RESET, 1);
-	mdelay(5);
-	gpio_set_value(UIB_TOUCH_RESET, 0);
-	mdelay(5);
-	gpio_set_value(UIB_TOUCH_RESET, 1);
-	mdelay(20);
 	gpio_request(UIB_TOUCH_IRQ, "SSD-IRQ");
 
 	i2c_register_board_info(0, mxc_i2c0_board_info,

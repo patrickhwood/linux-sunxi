@@ -28,10 +28,8 @@
 #include <linux/sched.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
-#include <asm/uaccess.h>
-#include <linux/version.h>
+#include <linux/gpio.h>
 #include <linux/slab.h>
-#include <linux/regulator/consumer.h>
 #include <mach/hardware.h>
 
 #define TS_POLL_DELAY	(50 * 1000 * 1000)	/* ns delay before the first sample */
@@ -207,7 +205,7 @@ static int ssd_i2c_write(struct i2c_client *client, uint8_t cmd, uint8_t *data, 
 static int ssd_i2c_read_tp_info(struct ssl_ts_priv *ts)
 {
 	unsigned char buf[32]={0};
-	int i;
+	int __maybe_unused i;
 
 	// read firmware version
 	if(ssd_i2c_read(ts->client, DEVICE_ID_REG, buf, 2) < 0)
@@ -421,8 +419,19 @@ static int ssd2543_probe(struct i2c_client *client,
 	struct ssl_ts_priv *ts;
 	struct input_dev *input_dev;
 	int err = 0;
+	/* reset GPIO NR passed in dev.platform_data */
+	unsigned int *SSD_gpios = (unsigned int *) client->dev.platform_data;
 
-	dev_err(&client->dev, "%s\n",__func__);
+	dev_err(&client->dev, "%s:\n",__func__);
+ 
+	/* reset the SSD chip */
+	gpio_direction_output(SSD_gpios[0], 1);
+	mdelay(5);
+	gpio_set_value(SSD_gpios[0], 0);
+	mdelay(5);
+	gpio_set_value(SSD_gpios[0], 1);
+	mdelay(25);
+
 	if (!i2c_check_functionality(client->adapter,
 					 I2C_FUNC_SMBUS_READ_WORD_DATA)) {
 		dev_err(&client->dev, "%s: i2c_check_functionality failed\n", __func__);
