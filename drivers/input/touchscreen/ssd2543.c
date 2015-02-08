@@ -206,7 +206,7 @@ static int ssd_i2c_write(struct i2c_client *client, uint8_t cmd, uint8_t *data, 
 	ret = ssd_i2c_transfer(client, msgs, 1);
 	if(ret < 0)
 	{
-		dev_err(&client->dev, "%s, i2c read error, ret %d\n", __func__, ret);
+		dev_err(&client->dev, "%s, i2c write error, ret %d\n", __func__, ret);
 	}
 	return ret;
 }
@@ -274,7 +274,8 @@ static int ssd_tp_init(struct ssl_ts_priv *ts)
 	{
 		buf[0] = ssdcfgTable[i].Data1;
 		buf[1] = ssdcfgTable[i].Data2;
-		ssd_i2c_write(ts->client, ssdcfgTable[i].Reg, buf, ssdcfgTable[i].No);
+		if (ssd_i2c_write(ts->client, ssdcfgTable[i].Reg, buf, ssdcfgTable[i].No) < 0)
+			return -1;
 	}
 
 	msleep(50);
@@ -531,9 +532,18 @@ static int ssd2543_probe(struct i2c_client *client,
 	input_set_abs_params(input_dev, ABS_PRESSURE, 0, MAX_PRESSURE, 0, 0);
 #endif
 
-	ssd_i2c_read_tp_info(ts);
-	ssd_tp_init(ts);
-	ssd_i2c_read_tp_info(ts);
+	if (ssd_i2c_read_tp_info(ts) < 0) {
+		err = -ENODEV;
+		goto err_free_mem;
+	}
+	if (ssd_tp_init(ts) < 0) {
+		err = -ENODEV;
+		goto err_free_mem;
+	}
+	if (ssd_i2c_read_tp_info(ts) < 0) {
+		err = -ENODEV;
+		goto err_free_mem;
+	}
 
 	INIT_WORK(&ts->ssl_work, ssd_ts_work);	// Intialize the work queue
 
