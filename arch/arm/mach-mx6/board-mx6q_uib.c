@@ -86,6 +86,9 @@
 #include "board-mx6dl_uib.h"
 #include <mach/imx_rfkill.h>
 
+#define UIB_LCD_EN			IMX_GPIO_NR(7, 12)
+#define UIB_LCD_CNTRL_VGH	IMX_GPIO_NR(2, 10)
+
 #define UIB_LED0	IMX_GPIO_NR(x, y)		// not assigned yet
 #define UIB_LED1	IMX_GPIO_NR(1, 5)
 #define UIB_LED2	IMX_GPIO_NR(1, 7)
@@ -158,7 +161,6 @@ extern char *gp_reg_id;
 extern char *soc_reg_id;
 extern char *pu_reg_id;
 extern int epdc_enabled;
-extern bool enet_to_gpio_6;
 
 /* eMMC */
 static const struct esdhc_platform_data mx6q_sabresd_sd0_data __initconst = {
@@ -272,10 +274,13 @@ static struct spi_board_info imx6_uib_spi_nfc_device[] __initdata = {
 static void spi_device_init(void)
 {
 	/* pull MOD and ASK/OOK high */
+	gpio_request(UIB_RFID_MOD, "rfid-mod");
 	gpio_direction_output(UIB_RFID_MOD, 1);
+	gpio_request(UIB_RFID_ASKOOK, "rfid-askook");
 	gpio_direction_output(UIB_RFID_ASKOOK, 1);
 
 	/* enable RFID */
+	gpio_request(UIB_RFID_EN, "rfid-en");
 	gpio_direction_output(UIB_RFID_EN, 1);
 
 	/* register driver */
@@ -690,11 +695,23 @@ static struct imx_vout_mem vout_mem __initdata = {
 static void sabresd_suspend_enter(void)
 {
 	/* suspend preparation */
+	/* disable RFID */
+	gpio_set_value(UIB_RFID_EN, 0);
+
+	/* disable LCD */
+	gpio_set_value(UIB_LCD_EN, 0);
+	gpio_set_value(UIB_LCD_CNTRL_VGH, 0);
 }
 
 static void sabresd_suspend_exit(void)
 {
 	/* resume restore */
+	/* enable RFID */
+	gpio_set_value(UIB_RFID_EN, 1);
+
+	/* enable LCD */
+	gpio_set_value(UIB_LCD_EN, 1);
+	gpio_set_value(UIB_LCD_CNTRL_VGH, 1);
 }
 static const struct pm_platform_data mx6q_sabresd_pm_data __initconst = {
 	.name = "imx_pm",
@@ -953,18 +970,6 @@ static int __init caam_setup(char *__unused)
 	return 1;
 }
 early_param("caam", caam_setup);
-#endif
-
-#define SNVS_LPCR 0x38
-static void mx6_snvs_poweroff(void)
-{
-
-	void __iomem *mx6_snvs_base =  MX6_IO_ADDRESS(MX6Q_SNVS_BASE_ADDR);
-	u32 value;
-	value = readl(mx6_snvs_base + SNVS_LPCR);
-	/*set TOP and DP_EN bit*/
-	writel(value | 0x60, mx6_snvs_base + SNVS_LPCR);
-}
 
 static const struct imx_pcie_platform_data mx6_sabresd_pcie_data __initconst = {
 	.pcie_pwr_en	= SABRESD_PCIE_PWR_EN,
@@ -978,6 +983,18 @@ static const struct imx_pcie_platform_data mx6_sabresd_pcie_data __initconst = {
 #endif
 	.pcie_power_always_on = 1,
 };
+#endif // SABRE
+
+#define SNVS_LPCR 0x38
+static void mx6_snvs_poweroff(void)
+{
+
+	void __iomem *mx6_snvs_base =  MX6_IO_ADDRESS(MX6Q_SNVS_BASE_ADDR);
+	u32 value;
+	value = readl(mx6_snvs_base + SNVS_LPCR);
+	/*set TOP and DP_EN bit*/
+	writel(value | 0x60, mx6_snvs_base + SNVS_LPCR);
+}
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
 static struct resource ram_console_resource = {
@@ -1013,41 +1030,25 @@ static void __init mx6_sabresd_board_init(void)
 	if (cpu_is_mx6q()) {
 		mxc_iomux_v3_setup_multiple_pads(mx6q_sabresd_pads,
 			ARRAY_SIZE(mx6q_sabresd_pads));
-		if (enet_to_gpio_6) {
-			iomux_v3_cfg_t enet_gpio_pad =
-				MX6Q_PAD_GPIO_6__ENET_IRQ_TO_GPIO_6;
-			mxc_iomux_v3_setup_pad(enet_gpio_pad);
-		} else {
-			iomux_v3_cfg_t i2c3_pad =
-				MX6Q_PAD_GPIO_6__I2C3_SDA;
-			mxc_iomux_v3_setup_pad(i2c3_pad);
-		}
 	} else if (cpu_is_mx6dl()) {
+		// drive PMIC standby pad low
+		// @@@ note: this is changing to the iMX6 PMIC_STBY_REQ pin in Rev 2
+#define PMIC_STBY IMX_GPIO_NR(3, 16)
+		iomux_v3_cfg_t pmic_pad = MX6DL_PAD_EIM_D16__GPIO_3_16;
+		mxc_iomux_v3_setup_pad(pmic_pad);
+		gpio_request(PMIC_STBY, "");
+		gpio_direction_output(PMIC_STBY, 0);
+		// allow sysfs to modify this gpio for testing
+		gpio_export(PMIC_STBY, false);
+
 		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_pads,
 			ARRAY_SIZE(mx6dl_sabresd_pads));
-
-		if (enet_to_gpio_6) {
-			iomux_v3_cfg_t enet_gpio_pad =
-				MX6DL_PAD_GPIO_6__ENET_IRQ_TO_GPIO_6;
-			mxc_iomux_v3_setup_pad(enet_gpio_pad);
-		} else {
-			iomux_v3_cfg_t i2c3_pad =
-				MX6DL_PAD_GPIO_6__I2C3_SDA;
-			mxc_iomux_v3_setup_pad(i2c3_pad);
-		}
-		{
-			// drive PMIC standby pad low
-			// @@@ note: this is changing to the iMX6 PMIC_STBY_REQ pin in Rev 2
-#define PMIC_STBY IMX_GPIO_NR(3, 16)
-			iomux_v3_cfg_t pmic_pad = MX6DL_PAD_EIM_D16__GPIO_3_16;
-			mxc_iomux_v3_setup_pad(pmic_pad);
-			gpio_request(PMIC_STBY, "");
-			gpio_direction_output(PMIC_STBY, 0);
-			// allow sysfs to modify this gpio for testing
-			gpio_export(PMIC_STBY, false);
-		}
 	}
 
+	gpio_request(UIB_LCD_EN, "LCD_EN");
+	gpio_request(UIB_LCD_CNTRL_VGH, "LCD_CNTRL_VGH");
+	gpio_direction_output(UIB_LCD_EN, 1);
+	gpio_direction_output(UIB_LCD_CNTRL_VGH, 1);
 
 #ifdef CONFIG_FEC_1588
 	/* Set GPIO_16 input for IEEE-1588 ts_clk and RMII reference clock
@@ -1219,11 +1220,11 @@ static void __init mx6_sabresd_board_init(void)
 
 	imx6q_add_device_buttons();
 
+#ifdef SABRE
 	/* enable sensor 3v3 and 1v8 */
 	gpio_request(SABRESD_SENSOR_EN, "sensor-en");
 	gpio_direction_output(SABRESD_SENSOR_EN, 1);
 
-#ifdef SABRE
 	/* enable accel intr */
 	gpio_request(SABRESD_ACCL_INT, "accel-int");
 	gpio_direction_input(SABRESD_ACCL_INT);
@@ -1271,10 +1272,10 @@ static void __init mx6_sabresd_board_init(void)
 	pm_power_off = mx6_snvs_poweroff;
 	imx6q_add_busfreq();
 
+#ifdef SABRE
 	/* Add PCIe RC interface support
 	 */
 	imx6q_add_pcie(&mx6_sabresd_pcie_data);
-#ifdef SABRE
 	if (cpu_is_mx6dl()) {
 		mxc_iomux_v3_setup_multiple_pads(mx6dl_arm2_elan_pads,
 						ARRAY_SIZE(mx6dl_arm2_elan_pads));

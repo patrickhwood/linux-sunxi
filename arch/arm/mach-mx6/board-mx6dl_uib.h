@@ -191,6 +191,8 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 
 	/* LVDS0 EN */
 	MX6DL_PAD_GPIO_17__GPIO_7_12,
+	/* LCD CNTRL_VGH */
+	MX6DL_PAD_SD4_DAT2__GPIO_2_10,
 
 	/* PWM speaker */
 	MX6DL_PAD_SD4_DAT1__PWM3_PWMO,
