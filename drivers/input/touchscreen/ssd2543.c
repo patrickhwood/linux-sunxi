@@ -30,6 +30,9 @@
 #include <linux/irq.h>
 #include <linux/gpio.h>
 #include <linux/slab.h>
+#ifdef CONFIG_HAS_EARLYSUSPEND
+# include <linux/earlysuspend.h>
+#endif
 #include <mach/hardware.h>
 
 #define TS_POLL_DELAY	(50 * 1000 * 1000)	/* ns delay before the first sample */
@@ -102,11 +105,14 @@ static const struct ChipSetting ssdcfgTable[] = {
 };
 
 static const struct ChipSetting Resume[]={
-	{ 2,0x04,0x00,0x01},
+	// we don't sleep { 2,0x04,0x00,0x01},
+	{2,0x25,0x00,0x0C},
 };
 
 static const struct ChipSetting Suspend[] ={
-	{ 2,0x05,0x00,0x01},
+	// we don't sleep { 2,0x05,0x00,0x01},
+	// reduce scan rate to 50 msec
+	{2,0x25,0x00,0x32},
 };
 
 struct ssl_ts_priv {
@@ -118,9 +124,12 @@ struct ssl_ts_priv {
 	struct i2c_client	*client;
 	spinlock_t			lock;
 	int					irq;
+#ifdef CONFIG_HAS_EARLYSUSPEND
+	struct early_suspend early_suspend;
+#endif 
 };
 
-static struct workqueue_struct *ssd253x_wq;
+static struct workqueue_struct *ssd2543_wq;
 static int preEventStatus;
 
 static int ssd_i2c_transfer(struct i2c_client *client, struct i2c_msg *msgs, int cnt)
@@ -265,7 +274,7 @@ static int ssd_tp_init(struct ssl_ts_priv *ts)
 	{
 		buf[0] = ssdcfgTable[i].Data1;
 		buf[1] = ssdcfgTable[i].Data2;
-		ssd_i2c_write(ts->client,ssdcfgTable[i].Reg, buf, ssdcfgTable[i].No);
+		ssd_i2c_write(ts->client, ssdcfgTable[i].Reg, buf, ssdcfgTable[i].No);
 	}
 
 	msleep(50);
@@ -397,7 +406,7 @@ static irqreturn_t ssd_ts_irq(int irq, void *handle)
 	struct ssl_ts_priv *ts = handle;
 
 	dev_dbg(&ts->client->dev, "%s\n", __func__);
-	queue_work(ssd253x_wq, &ts->ssl_work);
+	queue_work(ssd2543_wq, &ts->ssl_work);
 
 	return IRQ_HANDLED;
 }
@@ -408,10 +417,51 @@ static enum hrtimer_restart ssd_ts_timer(struct hrtimer *timer)
 	struct ssl_ts_priv *ts = container_of(timer, struct ssl_ts_priv, timer);
 	// dev_dbg(ts->client->dev, "%s\n",__func__);
 
-	queue_work(ssd253x_wq, &ts->ssl_work);
+	queue_work(ssd2543_wq, &ts->ssl_work);
 	return HRTIMER_NORESTART;
 }
 #endif
+
+#ifdef CONFIG_HAS_EARLYSUSPEND
+static void ssd2543_ts_late_resume(struct early_suspend *early_s)
+{
+	unsigned char buf[4]={0};
+	int i;
+	struct ssl_ts_priv *ts = container_of(early_s, struct ssl_ts_priv, early_suspend);
+
+	dev_info(&ts->client->dev, "%s\n", __func__);
+
+	// disable system wakeup on the touch panel's IRQ
+	disable_irq_wake(ts->irq);
+
+	// write Resume commands to touch IIC
+	for (i = 0; i < sizeof(Resume)/sizeof(Resume[0]); i++)
+	{
+		buf[0] = Resume[i].Data1;
+		buf[1] = Resume[i].Data2;
+		ssd_i2c_write(ts->client, Resume[i].Reg, buf, Resume[i].No);
+	}
+}
+static void ssd2543_ts_early_suspend(struct early_suspend *early_s)
+{
+	unsigned char buf[4]={0};
+	int i;
+	struct ssl_ts_priv *ts = container_of(early_s, struct ssl_ts_priv, early_suspend);
+
+	dev_info(&ts->client->dev, "%s\n", __func__);
+
+	// write Suspend commands to touch IIC
+	for (i = 0; i < sizeof(Suspend)/sizeof(Suspend[0]); i++)
+	{
+		buf[0] = Suspend[i].Data1;
+		buf[1] = Suspend[i].Data2;
+		ssd_i2c_write(ts->client, Suspend[i].Reg, buf, Suspend[i].No);
+	}
+
+	// enable system wakeup on the touch panel's IRQ
+	enable_irq_wake(ts->irq);
+}
+#endif /* CONFIG_HAS_EARLYSUSPEND */
 
 static int ssd2543_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
@@ -514,6 +564,13 @@ static int ssd2543_probe(struct i2c_client *client,
 		goto err_free_irq;
 	}
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
+	ts->early_suspend.suspend = ssd2543_ts_early_suspend;
+	ts->early_suspend.resume  = ssd2543_ts_late_resume;
+	ts->early_suspend.level   = EARLY_SUSPEND_LEVEL_BLANK_SCREEN-2;
+	register_early_suspend(&ts->early_suspend);
+#endif
+
 	return 0;
 
  err_free_irq:
@@ -523,9 +580,9 @@ static int ssd2543_probe(struct i2c_client *client,
 	free_irq(ts->irq, ts);
 #endif
  err_free_mem:
-	if (ssd253x_wq)
-		destroy_workqueue(ssd253x_wq);
-	ssd253x_wq = NULL;
+	if (ssd2543_wq)
+		destroy_workqueue(ssd2543_wq);
+	ssd2543_wq = NULL;
 	input_free_device(input_dev);
 	kfree(ts);
 	dev_err(&client->dev, "%s: failed, err = %d\n", __func__, err);
@@ -541,9 +598,9 @@ static int ssd2543_remove(struct i2c_client *client)
 #else
 	free_irq(ts->irq, ts);
 #endif
-	if (ssd253x_wq)
-		destroy_workqueue(ssd253x_wq);
-	ssd253x_wq = NULL;
+	if (ssd2543_wq)
+		destroy_workqueue(ssd2543_wq);
+	ssd2543_wq = NULL;
 	input_unregister_device(ts->input);
 	kfree(ts);
 
@@ -569,8 +626,8 @@ static struct i2c_driver ssd2543_driver = {
 
 static int __init ssd2543_init(void)
 {
-	ssd253x_wq = create_singlethread_workqueue("ssd253x_wq");
-	if (!ssd253x_wq){
+	ssd2543_wq = create_singlethread_workqueue("ssd2543_wq");
+	if (!ssd2543_wq){
 		return -ENOMEM;
 	}
 	else{
@@ -581,7 +638,7 @@ static int __init ssd2543_init(void)
 static void __exit ssd2543_exit(void)
 {
 	i2c_del_driver(&ssd2543_driver);
-	if (ssd253x_wq) destroy_workqueue(ssd253x_wq);
+	if (ssd2543_wq) destroy_workqueue(ssd2543_wq);
 }
 
 module_init(ssd2543_init);
