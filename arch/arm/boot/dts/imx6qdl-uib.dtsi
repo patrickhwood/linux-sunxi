@@ -409,7 +409,7 @@
 
 		pinctrl_pwm1: pwm1grp {
 			fsl,pins = <
-				MX6QDL_PAD_SD1_DAT3__PWM1_OUT		0x1b0b1
+				MX6QDL_PAD_GPIO_9__PWM1_OUT		0x1b0b1
 			>;
 		};
 
@@ -449,6 +449,17 @@
 				MX6QDL_PAD_SD3_DAT5__SD3_DATA5		0x17059
 				MX6QDL_PAD_SD3_DAT6__SD3_DATA6		0x17059
 				MX6QDL_PAD_SD3_DAT7__SD3_DATA7		0x17059
+			>;
+		};
+
+		pinctrl_usdhc1: usdhc1grp {
+			fsl,pins = <
+				MX6QDL_PAD_SD1_CMD__SD1_CMD		0x17059
+				MX6QDL_PAD_SD1_CLK__SD1_CLK		0x10059
+				MX6QDL_PAD_SD1_DAT0__SD1_DATA0		0x17059
+				MX6QDL_PAD_SD1_DAT1__SD1_DATA1		0x17059
+				MX6QDL_PAD_SD1_DAT2__SD1_DATA2		0x17059
+				MX6QDL_PAD_SD1_DAT3__SD1_DATA3		0x17059
 			>;
 		};
 
@@ -560,5 +571,14 @@
 	bus-width = <8>;
 	non-removable;
 	status = "okay";
-	no-1-8-v;
+	/* no-1-8-v; */
+	mmc-hs200-1_8v;
+};
+
+&usdhc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usdhc1>;
+	bus-width = <4>;
+	broken-cd;
+	status = "okay";
 };
