@@ -31,7 +31,7 @@ that from the start.
 
   cp config.uib .config
 
-6. Copy arch/arm/boot/zImage (kernel image) and arch/arm/boot/dts/imx6dl-sabresd.dtb
+6. Copy arch/arm/boot/zImage (kernel image) and arch/arm/boot/dts/imx6dl-uib.dtb
    (device tree binary) to the first partition on the SD card, which should be
    formatted FAT32 (vfat on linux); this partition should be very small, as only
    these two files need to be stored there.  Copy the contents of output/lib to
