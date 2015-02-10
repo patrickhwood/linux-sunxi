@@ -105,14 +105,13 @@ static const struct ChipSetting ssdcfgTable[] = {
 };
 
 static const struct ChipSetting Resume[]={
-	// we don't sleep { 2,0x04,0x00,0x01},
-	{2,0x25,0x00,0x0C},
+	// { 2,0x04,0x00,0x01},	// exit sleep mode
+	{2,0x25,0x00,0x0C},	// reset scan rate
 };
 
 static const struct ChipSetting Suspend[] ={
-	// we don't sleep { 2,0x05,0x00,0x01},
-	// reduce scan rate to 50 msec
-	{2,0x25,0x00,0x32},
+	// { 2,0x05,0x00,0x01},	// enter sleep mode
+	{2,0x25,0x00,0x32},	// reduce scan rate to 50 msec
 };
 
 struct ssl_ts_priv {
