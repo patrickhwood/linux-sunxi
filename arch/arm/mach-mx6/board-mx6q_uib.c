@@ -1027,22 +1027,28 @@ static void __init mx6_sabresd_board_init(void)
 	int rate;
 	struct platform_device *voutdev;
 
+	// set up external pads
 	if (cpu_is_mx6q()) {
 		mxc_iomux_v3_setup_multiple_pads(mx6q_sabresd_pads,
 			ARRAY_SIZE(mx6q_sabresd_pads));
 	} else if (cpu_is_mx6dl()) {
+		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_pads,
+			ARRAY_SIZE(mx6dl_sabresd_pads));
+
 		// drive PMIC standby pad low
 		// @@@ note: this is changing to the iMX6 PMIC_STBY_REQ pin in Rev 2
 #define PMIC_STBY IMX_GPIO_NR(3, 16)
-		iomux_v3_cfg_t pmic_pad = MX6DL_PAD_EIM_D16__GPIO_3_16;
-		mxc_iomux_v3_setup_pad(pmic_pad);
+		mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_D16__GPIO_3_16);
 		gpio_request(PMIC_STBY, "");
 		gpio_direction_output(PMIC_STBY, 0);
 		// allow sysfs to modify this gpio for testing
 		gpio_export(PMIC_STBY, false);
+		// @@@ power down Micrel RGMII phy
+#define MICREL_STBY IMX_GPIO_NR(6, 29)
+		mxc_iomux_v3_setup_pad(MX6DL_PAD_RGMII_RD3__GPIO_6_29);
+		gpio_request(MICREL_STBY, "");
+		gpio_direction_output(MICREL_STBY, 0);
 
-		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_pads,
-			ARRAY_SIZE(mx6dl_sabresd_pads));
 	}
 
 	gpio_request(UIB_LCD_EN, "LCD_EN");
