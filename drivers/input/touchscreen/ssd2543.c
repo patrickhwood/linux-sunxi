@@ -111,7 +111,7 @@ static const struct ChipSetting Resume[]={
 
 static const struct ChipSetting Suspend[] ={
 	// { 2,0x05,0x00,0x01},	// enter sleep mode
-	{2,0x25,0x00,0x32},	// reduce scan rate to 50 msec
+	{2,0x25,0x00,0x64},	// reduce scan rate to 100 msec
 };
 
 struct ssl_ts_priv {
@@ -125,6 +125,7 @@ struct ssl_ts_priv {
 	int					irq;
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend early_suspend;
+	bool				suspended;
 #endif 
 };
 
@@ -296,6 +297,15 @@ static void ssd_ts_work(struct work_struct *work)
 	int FingerP[FINGERNO];
 	int ret;
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
+	if (ts->suspended) {
+		input_report_key(ts->input, KEY_INFO, 1);
+		input_report_key(ts->input, KEY_INFO, 0);
+		input_sync(ts->input);
+		ts->suspended = false;
+	}
+#endif
+
 	// read i2c data from device
 	ret = ssd_i2c_read(ts->client, EVENT_STATUS, buf, 2);
 	if(ret < 0)
@@ -449,6 +459,7 @@ static void ssd2543_ts_early_suspend(struct early_suspend *early_s)
 	struct ssl_ts_priv *ts = container_of(early_s, struct ssl_ts_priv, early_suspend);
 
 	dev_info(&ts->client->dev, "%s\n", __func__);
+	ts->suspended = true;
 
 	// write Suspend commands to touch IIC
 	for (i = 0; i < sizeof(Suspend)/sizeof(Suspend[0]); i++)
@@ -513,6 +524,7 @@ static int ssd2543_probe(struct i2c_client *client,
 
 	input_dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
 	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
+	input_dev->keybit[BIT_WORD(KEY_INFO)] |= BIT_MASK(KEY_INFO);
 
 #ifdef MT_SUPPORT
 	input_set_abs_params(input_dev,
@@ -574,6 +586,7 @@ static int ssd2543_probe(struct i2c_client *client,
 	}
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
+	ts->suspended = false;
 	ts->early_suspend.suspend = ssd2543_ts_early_suspend;
 	ts->early_suspend.resume  = ssd2543_ts_late_resume;
 	ts->early_suspend.level   = EARLY_SUSPEND_LEVEL_BLANK_SCREEN-2;
