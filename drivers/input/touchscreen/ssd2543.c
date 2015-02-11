@@ -299,8 +299,8 @@ static void ssd_ts_work(struct work_struct *work)
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	if (ts->suspended) {
-		input_report_key(ts->input, KEY_INFO, 1);
-		input_report_key(ts->input, KEY_INFO, 0);
+		input_report_key(ts->input, KEY_WAKEUP, 1);
+		input_report_key(ts->input, KEY_WAKEUP, 0);
 		input_sync(ts->input);
 		ts->suspended = false;
 	}
@@ -524,7 +524,7 @@ static int ssd2543_probe(struct i2c_client *client,
 
 	input_dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
 	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
-	input_dev->keybit[BIT_WORD(KEY_INFO)] |= BIT_MASK(KEY_INFO);
+	input_dev->keybit[BIT_WORD(KEY_WAKEUP)] |= BIT_MASK(KEY_WAKEUP);
 
 #ifdef MT_SUPPORT
 	input_set_abs_params(input_dev,
