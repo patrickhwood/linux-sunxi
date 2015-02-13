@@ -720,9 +720,9 @@ static const struct pm_platform_data mx6q_sabresd_pm_data __initconst = {
 };
 
 static struct regulator_consumer_supply sabresd_vmmc_consumers[] = {
+	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.0"),
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.1"),
 	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.2"),
-	REGULATOR_SUPPLY("vmmc", "sdhci-esdhc-imx.3"),
 };
 
 static struct regulator_init_data sabresd_vmmc_init = {
@@ -1170,7 +1170,7 @@ static void __init mx6_sabresd_board_init(void)
 
 	imx6q_add_pm_imx(0, &mx6q_sabresd_pm_data);
 
-	/* Move sd4 to first because sd4 connect to emmc.
+	/*
 	   Mfgtools want emmc is mmcblk0 and other sd card is mmcblk1.
 	*/
 	imx6q_add_sdhci_usdhc_imx(0, &mx6q_sabresd_sd0_data);
