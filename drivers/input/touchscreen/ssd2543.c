@@ -40,7 +40,7 @@
 #define MAX_X        1023
 #define MAX_Y        599
 #define MAX_PRESSURE 200
-// #define MT_SUPPORT
+#define MT_SUPPORT
 
 #define FINGERNO 5
 
@@ -91,7 +91,7 @@ static const struct ChipSetting ssdcfgTable[] = {
 	{2,0xD8,0x00,0x07},
 	{2,0xDB,0x00,0x02},
 	{2,0x30,0x08,0x0D},
-	{2,0x34,0xC6,0x40},
+	{2,0x34,0x00,0x80},
 	{2,0x36,0x00,0x1A},
 	{2,0x3A,0x00,0x00},
 	{2,0x65,0x00,0x04},
@@ -527,16 +527,11 @@ static int ssd2543_probe(struct i2c_client *client,
 	input_dev->keybit[BIT_WORD(KEY_WAKEUP)] |= BIT_MASK(KEY_WAKEUP);
 
 #ifdef MT_SUPPORT
-	input_set_abs_params(input_dev,
-				ABS_MT_POSITION_X,  0, MAX_X, 0, 0);
-	input_set_abs_params(input_dev,
-				ABS_MT_POSITION_Y,  0, MAX_Y, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_POSITION_X,  0, MAX_X, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_POSITION_Y,  0, MAX_Y, 0, 0);
 	input_set_abs_params(input_dev, ABS_MT_PRESSURE, 0, MAX_PRESSURE, 0, 0);
-	input_set_abs_params(input_dev,
-				ABS_MT_TOUCH_MAJOR, 0, 1, 0, 0);
-	input_set_abs_params(input_dev,
-				ABS_MT_TRACKING_ID, 0,
-				FINGERNO-1, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR, 0, 1, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_TRACKING_ID, 0, FINGERNO-1, 0, 0);
 #else
 	input_set_abs_params(input_dev, ABS_X, 0, MAX_X, 0, 0);
 	input_set_abs_params(input_dev, ABS_Y, 0, MAX_Y, 0, 0);
