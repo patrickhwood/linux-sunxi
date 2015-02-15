@@ -47,15 +47,7 @@
 			enable-active-high;
 		};
 
-		reg_audio: regulator@2 {
-			compatible = "regulator-fixed";
-			reg = <2>;
-			regulator-name = "wm8962-supply";
-			gpio = <&gpio4 10 0>;
-			enable-active-high;
-		};
-
-		reg_pcie: regulator@3 {
+		reg_pcie: regulator@2 {
 			compatible = "regulator-fixed";
 			reg = <3>;
 			regulator-name = "MPCIE_3V3";
@@ -92,25 +84,6 @@
 		};
 	};
 
-	sound {
-		compatible = "fsl,imx6q-sabresd-wm8962",
-			   "fsl,imx-audio-wm8962";
-		model = "wm8962-audio";
-		ssi-controller = <&ssi2>;
-		audio-codec = <&codec>;
-		audio-routing =
-			"Headphone Jack", "HPOUTL",
-			"Headphone Jack", "HPOUTR",
-			"Ext Spk", "SPKOUTL",
-			"Ext Spk", "SPKOUTR",
-			"MICBIAS", "AMIC",
-			"IN3R", "MICBIAS",
-			"DMIC", "MICBIAS",
-			"DMICDAT", "DMIC";
-		mux-int-port = <2>;
-		mux-ext-port = <3>;
-	};
-
 	backlight {
 		compatible = "pwm-backlight";
 		pwms = <&pwm1 0 5000000>;
@@ -131,18 +104,31 @@
 	};
 };
 
-&audmux {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_audmux>;
-	status = "okay";
-};
-
 &ecspi1 {
 	fsl,spi-num-chipselects = <1>;
 	cs-gpios = <&gpio5 17 0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_ecspi1>;
 	status = "okay";
+	spi-max-frequency = <2000000>;
+
+    spidev0: spi@0 {
+        compatible = "spidev";
+        reg = <0>;
+        spi-max-frequency = <2000000>;
+    };
+/*
+	interrupt-parent = <&gpio3>;
+	interrupts = <31 0>;
+
+	nfc@0 {
+		compatible = "ti,trf7970a";
+		reg = <0>;
+		pinctrl-names = "default";
+		ti,enable-gpios = <&gpio3 30 GPIO_ACTIVE_HIGH>, <&gpio3 29 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+*/
 };
 
 &fec {
@@ -152,12 +138,6 @@
 	phy-reset-gpios = <&gpio1 25 GPIO_ACTIVE_LOW>;
 	interrupts-extended = <&gpio1 26 IRQ_TYPE_LEVEL_LOW>;
 	status = "disabled";
-};
-
-&gpmi {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_gpmi_nand>;
-	status = "okay";
 };
 
 &hdmi {
@@ -170,28 +150,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c1>;
 	status = "okay";
-
-	codec: wm8962@1a {
-		compatible = "wlf,wm8962";
-		reg = <0x1a>;
-		clocks = <&clks 201>;
-		DCVDD-supply = <&reg_audio>;
-		DBVDD-supply = <&reg_audio>;
-		AVDD-supply = <&reg_audio>;
-		CPVDD-supply = <&reg_audio>;
-		MICVDD-supply = <&reg_audio>;
-		PLLVDD-supply = <&reg_audio>;
-		SPKVDD1-supply = <&reg_audio>;
-		SPKVDD2-supply = <&reg_audio>;
-		gpio-cfg = <
-			0x0000 /* 0:Default */
-			0x0000 /* 1:Default */
-			0x0013 /* 2:FN_DMICCLK */
-			0x0000 /* 3:Default */
-			0x8014 /* 4:FN_DMICCDAT */
-			0x0000 /* 5:Default */
-		>;
-       };
 };
 
 &i2c2 {
@@ -199,105 +157,6 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_i2c2>;
 	status = "okay";
-
-	pmic: pfuze100@08 {
-		compatible = "fsl,pfuze100";
-		reg = <0x08>;
-
-		regulators {
-			sw1a_reg: sw1ab {
-				regulator-min-microvolt = <300000>;
-				regulator-max-microvolt = <1875000>;
-				regulator-boot-on;
-				regulator-always-on;
-				regulator-ramp-delay = <6250>;
-			};
-
-			sw1c_reg: sw1c {
-				regulator-min-microvolt = <300000>;
-				regulator-max-microvolt = <1875000>;
-				regulator-boot-on;
-				regulator-always-on;
-				regulator-ramp-delay = <6250>;
-			};
-
-			sw2_reg: sw2 {
-				regulator-min-microvolt = <800000>;
-				regulator-max-microvolt = <3300000>;
-				regulator-boot-on;
-				regulator-always-on;
-			};
-
-			sw3a_reg: sw3a {
-				regulator-min-microvolt = <400000>;
-				regulator-max-microvolt = <1975000>;
-				regulator-boot-on;
-				regulator-always-on;
-			};
-
-			sw3b_reg: sw3b {
-				regulator-min-microvolt = <400000>;
-				regulator-max-microvolt = <1975000>;
-				regulator-boot-on;
-				regulator-always-on;
-			};
-
-			sw4_reg: sw4 {
-				regulator-min-microvolt = <800000>;
-				regulator-max-microvolt = <3300000>;
-			};
-
-			swbst_reg: swbst {
-				regulator-min-microvolt = <5000000>;
-				regulator-max-microvolt = <5150000>;
-			};
-
-			snvs_reg: vsnvs {
-				regulator-min-microvolt = <1000000>;
-				regulator-max-microvolt = <3000000>;
-				regulator-boot-on;
-				regulator-always-on;
-			};
-
-			vref_reg: vrefddr {
-				regulator-boot-on;
-				regulator-always-on;
-			};
-
-			vgen1_reg: vgen1 {
-				regulator-min-microvolt = <800000>;
-				regulator-max-microvolt = <1550000>;
-			};
-
-			vgen2_reg: vgen2 {
-				regulator-min-microvolt = <800000>;
-				regulator-max-microvolt = <1550000>;
-			};
-
-			vgen3_reg: vgen3 {
-				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <3300000>;
-			};
-
-			vgen4_reg: vgen4 {
-				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <3300000>;
-				regulator-always-on;
-			};
-
-			vgen5_reg: vgen5 {
-				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <3300000>;
-				regulator-always-on;
-			};
-
-			vgen6_reg: vgen6 {
-				regulator-min-microvolt = <1800000>;
-				regulator-max-microvolt = <3300000>;
-				regulator-always-on;
-			};
-		};
-	};
 };
 
 &i2c3 {
@@ -571,14 +430,5 @@
 	bus-width = <8>;
 	non-removable;
 	status = "okay";
-	/* no-1-8-v; */
-	mmc-hs200-1_8v;
-};
-
-&usdhc1 {
-	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_usdhc1>;
-	bus-width = <4>;
-	broken-cd;
-	status = "okay";
+	no-1-8-v;
 };
