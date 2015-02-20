@@ -1035,6 +1035,7 @@ static void __init mx6_sabresd_board_init(void)
 		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_pads,
 			ARRAY_SIZE(mx6dl_sabresd_pads));
 
+#ifdef CONFIG_MX6DL_UIB_REV_1
 		// drive PMIC standby pad low
 		// @@@ note: this is changing to the iMX6 PMIC_STBY_REQ pin in Rev 2
 #define PMIC_STBY IMX_GPIO_NR(3, 16)
@@ -1043,6 +1044,8 @@ static void __init mx6_sabresd_board_init(void)
 		gpio_direction_output(PMIC_STBY, 0);
 		// allow sysfs to modify this gpio for testing
 		gpio_export(PMIC_STBY, false);
+#endif
+
 		// @@@ power down Micrel RGMII phy
 #define MICREL_STBY IMX_GPIO_NR(6, 29)
 		mxc_iomux_v3_setup_pad(MX6DL_PAD_RGMII_RD3__GPIO_6_29);

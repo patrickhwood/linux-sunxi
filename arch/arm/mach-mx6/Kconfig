@@ -186,10 +186,17 @@ config MACH_MX6Q_SABRELITE
 	  Include support for i.MX 6Quad SABRE Lite platform. This includes specific
 	  configurations for the board and its peripherals.
 
+config MX6DL_UIB_REV_1
+	bool "Support i.MX UIB Rev 1 board"
+	help
+	  Include support for i.MX 6Quad/DL UIB platform. This is specific to the
+	  Rev 1 configuration of the board and its peripherals.
+
 config MACH_MX6Q_UIB
 	bool "Support i.MX UIB platform"
 	select ARCH_MX6Q
 	select SOC_IMX6Q
+	select MX6DL_UIB_REV_1
 	select IMX_HAVE_PLATFORM_IMX_UART
 	select IMX_HAVE_PLATFORM_DMA
 	select IMX_HAVE_PLATFORM_FEC
