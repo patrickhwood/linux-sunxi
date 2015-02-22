@@ -56,7 +56,6 @@
 #include <linux/mfd/wm8994/pdata.h>
 #include <linux/mfd/wm8994/gpio.h>
 #include <sound/wm8962.h>
-#include <linux/mfd/mxc-hdmi-core.h>
 
 #include <mach/common.h>
 #include <mach/hardware.h>
@@ -67,7 +66,6 @@
 #include <mach/viv_gpu.h>
 #include <mach/ahci_sata.h>
 #include <mach/ipu-v3.h>
-#include <mach/mxc_hdmi.h>
 #include <mach/mxc_asrc.h>
 #include <mach/mipi_dsi.h>
 #include <mach/mxc_ir.h>
@@ -125,7 +123,7 @@
 #define SABRESD_SENSOR_EN	IMX_GPIO_NR(2, 31)
 
 #define SABRESD_PCIE_PWR_EN	IMX_GPIO_NR(3, 19)
-#define SABRESD_USB_OTG_PWR	IMX_GPIO_NR(3, 22)
+#define SABRESD_USB_OTG_PWR_N	IMX_GPIO_NR(3, 22)
 #define SABRESD_USB_H1_PWR	IMX_GPIO_NR(1, 29)
 
 #define SABRESD_CAN1_STBY	IMX_GPIO_NR(4, 5)
@@ -154,8 +152,6 @@
 #define IOMUX_OBSRV_MUX1_OFFSET	0x3c
 #define OBSRV_MUX1_MASK			0x3f
 #define OBSRV_MUX1_ENET_IRQ		0x9
-
-static struct clk *sata_clk;
 
 extern char *gp_reg_id;
 extern char *soc_reg_id;
@@ -313,14 +309,7 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	},
 };
 
-static void imx6q_sabresd_usbotg_vbus(bool on)
-{
-	if (on)
-		gpio_set_value(SABRESD_USB_OTG_PWR, 1);
-	else
-		gpio_set_value(SABRESD_USB_OTG_PWR, 0);
-}
-
+#ifndef CONFIG_MX6DL_UIB_REV_1
 static void imx6q_sabresd_host1_vbus(bool on)
 {
 	if (on)
@@ -328,6 +317,7 @@ static void imx6q_sabresd_host1_vbus(bool on)
 	else
 		gpio_set_value(SABRESD_USB_H1_PWR, 0);
 }
+#endif
 
 static void __init imx6q_sabresd_init_usb(void)
 {
@@ -337,13 +327,16 @@ static void __init imx6q_sabresd_init_usb(void)
 	/* disable external charger detect,
 	 * or it will affect signal quality at dp .
 	 */
-	ret = gpio_request(SABRESD_USB_OTG_PWR, "usb-pwr");
+	ret = gpio_request(SABRESD_USB_OTG_PWR_N, "usb-pwr");
 	if (ret) {
 		pr_err("failed to get GPIO SABRESD_USB_OTG_PWR: %d\n",
 			ret);
 		return;
 	}
-	gpio_direction_output(SABRESD_USB_OTG_PWR, 0);
+	// force off, no OTG on UIB
+	gpio_direction_output(SABRESD_USB_OTG_PWR_N, 1);
+
+#ifndef CONFIG_MX6DL_UIB_REV_1
 	/* keep USB host1 VBUS always on */
 	ret = gpio_request(SABRESD_USB_H1_PWR, "usb-h1-pwr");
 	if (ret) {
@@ -352,15 +345,21 @@ static void __init imx6q_sabresd_init_usb(void)
 		return;
 	}
 	gpio_direction_output(SABRESD_USB_H1_PWR, 0);
+	mx6_set_host1_vbus_func(imx6q_sabresd_host1_vbus);
+#endif
+
+#ifdef SABRE
 	if (board_is_mx6_reva())
 		mxc_iomux_set_gpr_register(1, 13, 1, 1);
 	else
 		mxc_iomux_set_gpr_register(1, 13, 1, 0);
 
 	mx6_set_otghost_vbus_func(imx6q_sabresd_usbotg_vbus);
-	mx6_set_host1_vbus_func(imx6q_sabresd_host1_vbus);
-
+#endif
 }
+
+#ifdef SABRE
+static struct clk *sata_clk;
 
 /* HW Initialization, if return 0, initialization is successful. */
 static int mx6q_sabresd_sata_init(struct device *dev, void __iomem *addr)
@@ -461,10 +460,6 @@ static const struct flexcan_platform_data
 	.transceiver_switch = mx6q_sabresd_flexcan0_switch,
 };
 
-static struct viv_gpu_platform_data imx6q_gpu_pdata __initdata = {
-	.reserved_mem_size = SZ_128M + SZ_64M - SZ_16M,
-};
-
 static struct imx_asrc_platform_data imx_asrc_data = {
 	.channel_bits = 4,
 	.clk_map_ver = 2,
@@ -491,6 +486,11 @@ static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 	.lcd_panel	= "TRULY-WVGA",
 	.reset		= mx6_reset_mipi_dsi,
 };
+#endif /* SABRE */
+
+static struct viv_gpu_platform_data imx6q_gpu_pdata __initdata = {
+	.reserved_mem_size = SZ_128M + SZ_64M - SZ_16M,
+};
 
 static struct ipuv3_fb_platform_data sabresd_fb_data[] = {
 	{ /*fb0*/
@@ -515,68 +515,6 @@ static struct ipuv3_fb_platform_data sabresd_fb_data[] = {
 	.int_clk = false,
 	.late_init = false,
 	},
-};
-
-static void hdmi_init(int ipu_id, int disp_id)
-{
-	int hdmi_mux_setting;
-
-	if ((ipu_id > 1) || (ipu_id < 0)) {
-		pr_err("Invalid IPU select for HDMI: %d. Set to 0\n", ipu_id);
-		ipu_id = 0;
-	}
-
-	if ((disp_id > 1) || (disp_id < 0)) {
-		pr_err("Invalid DI select for HDMI: %d. Set to 0\n", disp_id);
-		disp_id = 0;
-	}
-
-	/* Configure the connection between IPU1/2 and HDMI */
-	hdmi_mux_setting = 2*ipu_id + disp_id;
-
-	/* GPR3, bits 2-3 = HDMI_MUX_CTL */
-	mxc_iomux_set_gpr_register(3, 2, 2, hdmi_mux_setting);
-
-	/* Set HDMI event as SDMA event2 while Chip version later than TO1.2 */
-	if (hdmi_SDMA_check())
-		mxc_iomux_set_gpr_register(0, 0, 1, 1);
-}
-
-/* On mx6x sabresd board i2c2 iomux with hdmi ddc,
- * the pins default work at i2c2 function,
- when hdcp enable, the pins should work at ddc function */
-
-static void hdmi_enable_ddc_pin(void)
-{
-	if (cpu_is_mx6dl())
-		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_hdmi_ddc_pads,
-			ARRAY_SIZE(mx6dl_sabresd_hdmi_ddc_pads));
-	else
-		mxc_iomux_v3_setup_multiple_pads(mx6q_sabresd_hdmi_ddc_pads,
-			ARRAY_SIZE(mx6q_sabresd_hdmi_ddc_pads));
-}
-
-static void hdmi_disable_ddc_pin(void)
-{
-	if (cpu_is_mx6dl())
-		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_i2c2_pads,
-			ARRAY_SIZE(mx6dl_sabresd_i2c2_pads));
-	else
-		mxc_iomux_v3_setup_multiple_pads(mx6q_sabresd_i2c2_pads,
-			ARRAY_SIZE(mx6q_sabresd_i2c2_pads));
-}
-
-static struct fsl_mxc_hdmi_platform_data hdmi_data = {
-	.init = hdmi_init,
-	.enable_pins = hdmi_enable_ddc_pin,
-	.disable_pins = hdmi_disable_ddc_pin,
-	.phy_reg_vlev = 0x0294,
-	.phy_reg_cksymtx = 0x800d,
-};
-
-static struct fsl_mxc_hdmi_core_platform_data hdmi_core_data = {
-	.ipu_id = 1,
-	.disp_id = 0,
 };
 
 static struct fsl_mxc_lcd_platform_data lcdif_data = {
@@ -874,7 +812,7 @@ static struct platform_pwm_generic_data mx6_sabresd_pwm_speaker = {
 	.pwm_id = 2,
 };
 
-#ifdef CONFIG_HAVE_EPIT
+#ifdef SABRE
 static struct platform_ir_data mx6_sabresd_ir_data = {
     .pwm_id = 1,
     .epit_id = 0,
@@ -1081,16 +1019,14 @@ static void __init mx6_sabresd_board_init(void)
 	if (cpu_is_mx6dl()) {
 		ldb_data.ipu_id = 0;
 		ldb_data.disp_id = 0;
-		hdmi_core_data.ipu_id = 0;
-		hdmi_core_data.disp_id = 0;
-		mipi_dsi_pdata.ipu_id = 0;
-		mipi_dsi_pdata.disp_id = 1;
+		// mipi_dsi_pdata.ipu_id = 0;
+		// mipi_dsi_pdata.disp_id = 1;
 		ldb_data.sec_ipu_id = 0;
 		// UIB
 		ldb_data.mode = LDB_SEP0;
 		sabresd_fb_data[0].mode_str = "LDB-WSVGA";
 	}
-	imx6q_add_mxc_hdmi_core(&hdmi_core_data);
+	// imx6q_add_mxc_hdmi_core(&hdmi_core_data);
 
 	imx6q_add_ipuv3(0, &ipu_data[0]);
 	if (cpu_is_mx6q()) {
@@ -1102,7 +1038,7 @@ static void __init mx6_sabresd_board_init(void)
 			imx6q_add_ipuv3fb(i, &sabresd_fb_data[i]);
 
 	imx6q_add_vdoa();
-	imx6q_add_mipi_dsi(&mipi_dsi_pdata);
+	// imx6q_add_mipi_dsi(&mipi_dsi_pdata);
 	imx6q_add_lcdif(&lcdif_data);
 	imx6q_add_ldb(&ldb_data);
 	voutdev = imx6q_add_v4l2_output(0);
@@ -1155,7 +1091,7 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_ecspi(0, &mx6q_uib_spi_data);
 	spi_device_init();
 
-	imx6q_add_mxc_hdmi(&hdmi_data);
+	// imx6q_add_mxc_hdmi(&hdmi_data);
 
 	imx6q_add_anatop_thermal_imx(1, &mx6q_sabresd_anatop_thermal_data);
 
@@ -1181,6 +1117,8 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_sdhci_usdhc_imx(1, &mx6q_sabresd_sd1_data);
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
 	imx6q_sabresd_init_usb();
+
+#ifdef SABRE
 	/* SATA is not supported by MX6DL/Solo */
 	if (cpu_is_mx6q()) {
 #ifdef CONFIG_SATA_AHCI_PLATFORM
@@ -1190,12 +1128,13 @@ static void __init mx6_sabresd_board_init(void)
 			(void __iomem *)ioremap(MX6Q_SATA_BASE_ADDR, SZ_4K));
 #endif
 	}
+#endif
 	imx6q_add_vpu();
 	/* imx6q_init_audio(); */
 	platform_device_register(&sabresd_vmmc_reg_devices);
-	imx_asrc_data.asrc_core_clk = clk_get(NULL, "asrc_clk");
-	imx_asrc_data.asrc_audio_clk = clk_get(NULL, "asrc_serial_clk");
-	imx6q_add_asrc(&imx_asrc_data);
+	// imx_asrc_data.asrc_core_clk = clk_get(NULL, "asrc_clk");
+	// imx_asrc_data.asrc_audio_clk = clk_get(NULL, "asrc_serial_clk");
+	// imx6q_add_asrc(&imx_asrc_data);
 
 #ifdef CONFIG_HAVE_EPIT
 	imx6q_add_mxc_epit(0);
@@ -1210,7 +1149,7 @@ static void __init mx6_sabresd_board_init(void)
 	platform_device_register_resndata(NULL, "pwm-generic", 2, NULL, 0,
 		&mx6_sabresd_pwm_speaker, sizeof(mx6_sabresd_pwm_speaker));
 
-#ifdef CONFIG_MX6_IR
+#ifdef SABRE
 	/* add MXC IR device */
 	imx6q_add_mxc_ir(0, &mx6_sabresd_ir_data);
 #endif
@@ -1219,7 +1158,7 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_viim();
 	imx6q_add_imx2_wdt(0, NULL);
 	imx6q_add_dma();
-	imx6q_add_gpmi(&mx6q_gpmi_nand_platform_data);
+	// imx6q_add_gpmi(&mx6q_gpmi_nand_platform_data);
 
 	imx6q_add_dvfs_core(&sabresd_dvfscore_data);
 
@@ -1245,8 +1184,8 @@ static void __init mx6_sabresd_board_init(void)
 	gpio_direction_input(SABRESD_ALS_INT);
 #endif
 
-	imx6q_add_hdmi_soc();
-	imx6q_add_hdmi_soc_dai();
+	// imx6q_add_hdmi_soc();
+	// imx6q_add_hdmi_soc_dai();
 
 	if (cpu_is_mx6dl()) {
 		imx6dl_add_imx_pxp();
