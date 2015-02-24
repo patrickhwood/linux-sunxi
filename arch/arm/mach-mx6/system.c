@@ -209,6 +209,7 @@ void mxc_cpu_lp_set(enum mxc_cpu_pwr_mode mode)
 					__raw_writel(anatop_val, anatop_base +
 						HW_ANADIG_REG_2P5);
 				}
+#ifndef CONFIG_MX6DL_UIB_REV_1
 				if (mx6q_revision() != IMX_CHIP_REVISION_1_0) {
 					/* Enable fet_odrive */
 					anatop_val = __raw_readl(anatop_base +
@@ -217,6 +218,7 @@ void mxc_cpu_lp_set(enum mxc_cpu_pwr_mode mode)
 					__raw_writel(anatop_val, anatop_base +
 						HW_ANADIG_REG_CORE);
 				}
+#endif
 			} else {
 				if (stop_mode == 2) {
 					/* Disable VDDHIGH_IN to VDDSNVS_IN
