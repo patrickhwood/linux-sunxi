@@ -638,7 +638,6 @@ static void sabresd_suspend_enter(void)
 
 	/* disable LCD */
 	gpio_set_value(UIB_LCD_EN, 0);
-	gpio_set_value(UIB_LCD_CNTRL_VGH, 0);
 }
 
 static void sabresd_suspend_exit(void)
@@ -649,7 +648,6 @@ static void sabresd_suspend_exit(void)
 
 	/* enable LCD */
 	gpio_set_value(UIB_LCD_EN, 1);
-	gpio_set_value(UIB_LCD_CNTRL_VGH, 1);
 }
 static const struct pm_platform_data mx6q_sabresd_pm_data __initconst = {
 	.name = "imx_pm",
