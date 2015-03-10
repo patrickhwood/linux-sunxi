@@ -963,6 +963,8 @@ static void __init mx6_sabresd_board_init(void)
 	int rate;
 	struct platform_device *voutdev;
 
+	gp_reg_id = "vddarmsoc_ext";
+
 	// set up external pads
 	if (cpu_is_mx6q()) {
 		mxc_iomux_v3_setup_multiple_pads(mx6q_sabresd_pads,
