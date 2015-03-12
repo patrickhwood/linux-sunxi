@@ -159,7 +159,7 @@ extern char *pu_reg_id;
 extern int epdc_enabled;
 
 /* eMMC */
-static const struct esdhc_platform_data mx6q_sabresd_sd0_data __initconst = {
+static const struct esdhc_platform_data mx6q_sabresd_emmc_data __initconst = {
 	.always_present = 1,
 	.keep_power_at_suspend = 1,
 	.support_8bit = 1,
@@ -168,15 +168,7 @@ static const struct esdhc_platform_data mx6q_sabresd_sd0_data __initconst = {
 };
 
 static const struct esdhc_platform_data mx6q_sabresd_sd1_data __initconst = {
-	.always_present = 1,
-	.keep_power_at_suspend = 1,
-	.delay_line = 0,
-	.cd_type = ESDHC_CD_CONTROLLER,
-	.runtime_pm = 1,
-};
-
-static const struct esdhc_platform_data mx6q_sabresd_sd2_data __initconst = {
-	.always_present = 1,
+	.always_present = 0,
 	.keep_power_at_suspend = 1,
 	.delay_line = 0,
 	.cd_type = ESDHC_CD_CONTROLLER,
@@ -1110,10 +1102,9 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_pm_imx(0, &mx6q_sabresd_pm_data);
 
 	/*
-	   Mfgtools want emmc is mmcblk0 and other sd card is mmcblk1.
+	   Mfgtools wants emmc as mmcblk0 and other sd card as mmcblk1.
 	*/
-	imx6q_add_sdhci_usdhc_imx(0, &mx6q_sabresd_sd0_data);
-	imx6q_add_sdhci_usdhc_imx(2, &mx6q_sabresd_sd2_data);
+	imx6q_add_sdhci_usdhc_imx(2, &mx6q_sabresd_emmc_data);
 	imx6q_add_sdhci_usdhc_imx(1, &mx6q_sabresd_sd1_data);
 	imx_add_viv_gpu(&imx6_gpu_data, &imx6q_gpu_pdata);
 	imx6q_sabresd_init_usb();
