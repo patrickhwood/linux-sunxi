@@ -442,6 +442,7 @@ static void ssd2543_ts_late_resume(struct early_suspend *early_s)
 	dev_info(&ts->client->dev, "%s\n", __func__);
 
 	// disable system wakeup on the touch panel's IRQ
+	ts->suspended = false;
 	disable_irq_wake(ts->irq);
 
 	// write Resume commands to touch IIC
