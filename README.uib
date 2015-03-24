@@ -19,19 +19,19 @@ that from the start.
 
   make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- imx_v6_v7_defconfig
 
-5. Build (note: set -jN where N == the number of cores on your CPU):
-
-  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4
-  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4 modules
-  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
-
-6. Set up the configuration.  You can use "make menuconfig" to customize the
+5. Set up the configuration.  You can use "make menuconfig" to customize the
    configuration or simply use config.uib, which is the configuraion I'm
    currently using to build the kernel with PCIe and Intel GB ethernet support:
 
   cp config.uib .config
 
-6. Copy arch/arm/boot/zImage (kernel image) and arch/arm/boot/dts/imx6dl-uib.dtb
+6. Build (note: set -jN where N == the number of cores on your CPU):
+
+  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4
+  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4 modules
+  make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=output modules_install
+
+7. Copy arch/arm/boot/zImage (kernel image) and arch/arm/boot/dts/imx6dl-uib.dtb
    (device tree binary) to the first partition on the SD card, which should be
    formatted FAT32 (vfat on linux); this partition should be very small, as only
    these two files need to be stored there.  Copy the contents of output/lib to
