@@ -460,7 +460,7 @@ static int trf7970a_cmd(struct trf7970a *trf, u8 opcode)
 	u8 cmd = TRF7970A_CMD_BIT_CTRL | TRF7970A_CMD_BIT_OPCODE(opcode);
 	int ret;
 
-	dev_err(trf->dev, "cmd: 0x%x\n", cmd);
+	dev_dbg(trf->dev, "cmd: 0x%x\n", cmd);
 
 	ret = spi_write(trf->spi, &cmd, 1);
 	if (ret)
@@ -479,7 +479,7 @@ static int trf7970a_read(struct trf7970a *trf, u8 reg, u8 *val)
 		dev_err(trf->dev, "%s - addr: 0x%x, ret: %d\n", __func__, addr,
 				ret);
 
-	dev_err(trf->dev, "read(0x%x): 0x%x\n", addr, *val);
+	dev_dbg(trf->dev, "read(0x%x): 0x%x\n", addr, *val);
 
 	return ret;
 }
@@ -491,7 +491,7 @@ static int trf7970a_read_cont(struct trf7970a *trf, u8 reg, u8 *buf, size_t len)
 	struct spi_message m;
 	int ret;
 
-	dev_err(trf->dev, "read_cont(0x%x, %zd)\n", addr, len);
+	dev_dbg(trf->dev, "read_cont(0x%x, %zd)\n", addr, len);
 
 	spi_message_init(&m);
 
@@ -517,7 +517,7 @@ static int trf7970a_write(struct trf7970a *trf, u8 reg, u8 val)
 	u8 buf[2] = { reg, val };
 	int ret;
 
-	dev_err(trf->dev, "write(0x%x): 0x%x\n", reg, val);
+	dev_dbg(trf->dev, "write(0x%x): 0x%x\n", reg, val);
 
 	ret = spi_write(trf->spi, buf, 2);
 	if (ret)
@@ -593,7 +593,7 @@ static int trf7970a_mode_detect(struct trf7970a *trf, u8 *rf_tech)
 		tech = NFC_DIGITAL_RF_TECH_424F;
 		break;
 	default:
-		dev_err(trf->dev, "%s - mode_detect: target_proto: 0x%x\n",
+		dev_dbg(trf->dev, "%s - mode_detect: target_proto: 0x%x\n",
 				__func__, target_proto);
 		return -EIO;
 	}
@@ -616,7 +616,7 @@ static void trf7970a_send_upstream(struct trf7970a *trf)
 	trf->state = TRF7970A_ST_IDLE;
 
 	if (trf->aborting) {
-		dev_err(trf->dev, "Abort process complete\n");
+		dev_dbg(trf->dev, "Abort process complete\n");
 
 		if (!IS_ERR(trf->rx_skb)) {
 			kfree_skb(trf->rx_skb);
@@ -633,7 +633,7 @@ static void trf7970a_send_upstream(struct trf7970a *trf)
 
 static void trf7970a_send_err_upstream(struct trf7970a *trf, int errno)
 {
-	dev_err(trf->dev, "Error - state: %d, errno: %d\n", trf->state, errno);
+	dev_dbg(trf->dev, "Error - state: %d, errno: %d\n", trf->state, errno);
 
 	cancel_delayed_work(&trf->timeout_work);
 
@@ -692,7 +692,7 @@ static int trf7970a_transmit(struct trf7970a *trf, struct sk_buff *skb,
 		}
 	}
 
-	dev_err(trf->dev, "Setting timeout for %d ms, state: %d\n", timeout,
+	dev_dbg(trf->dev, "Setting timeout for %d ms, state: %d\n", timeout,
 			trf->state);
 
 	schedule_delayed_work(&trf->timeout_work, msecs_to_jiffies(timeout));
@@ -714,7 +714,7 @@ static void trf7970a_fill_fifo(struct trf7970a *trf)
 		return;
 	}
 
-	dev_err(trf->dev, "Filling FIFO - fifo_bytes: 0x%x\n", fifo_bytes);
+	dev_dbg(trf->dev, "Filling FIFO - fifo_bytes: 0x%x\n", fifo_bytes);
 
 	fifo_bytes &= ~TRF7970A_FIFO_STATUS_OVERFLOW;
 
@@ -752,7 +752,7 @@ static void trf7970a_drain_fifo(struct trf7970a *trf, u8 status)
 		return;
 	}
 
-	dev_err(trf->dev, "Draining FIFO - fifo_bytes: 0x%x\n", fifo_bytes);
+	dev_dbg(trf->dev, "Draining FIFO - fifo_bytes: 0x%x\n", fifo_bytes);
 
 	fifo_bytes &= ~TRF7970A_FIFO_STATUS_OVERFLOW;
 
@@ -811,7 +811,7 @@ no_rx_data:
 		return;
 	}
 
-	dev_err(trf->dev, "Setting timeout for %d ms\n",
+	dev_dbg(trf->dev, "Setting timeout for %d ms\n",
 			TRF7970A_WAIT_FOR_RX_DATA_TIMEOUT);
 
 	schedule_delayed_work(&trf->timeout_work,
@@ -837,7 +837,7 @@ static irqreturn_t trf7970a_irq(int irq, void *dev_id)
 		return IRQ_NONE;
 	}
 
-	dev_err(trf->dev, "IRQ - state: %d, status: 0x%x\n", trf->state,
+	dev_dbg(trf->dev, "IRQ - state: %d, status: 0x%x\n", trf->state,
 			status);
 
 	if (!status) {
@@ -984,7 +984,7 @@ static void trf7970a_issue_eof(struct trf7970a *trf)
 {
 	int ret;
 
-	dev_err(trf->dev, "Issuing EOF\n");
+	dev_dbg(trf->dev, "Issuing EOF\n");
 
 	ret = trf7970a_cmd(trf, TRF7970A_CMD_FIFO_RESET);
 	if (ret)
@@ -996,7 +996,7 @@ static void trf7970a_issue_eof(struct trf7970a *trf)
 
 	trf->state = TRF7970A_ST_WAIT_FOR_RX_DATA;
 
-	dev_err(trf->dev, "Setting timeout for %d ms, state: %d\n",
+	dev_dbg(trf->dev, "Setting timeout for %d ms, state: %d\n",
 			trf->timeout, trf->state);
 
 	schedule_delayed_work(&trf->timeout_work,
@@ -1008,7 +1008,7 @@ static void trf7970a_timeout_work_handler(struct work_struct *work)
 	struct trf7970a *trf = container_of(work, struct trf7970a,
 			timeout_work.work);
 
-	dev_err(trf->dev, "Timeout - state: %d, ignore_timeout: %d\n",
+	dev_dbg(trf->dev, "Timeout - state: %d, ignore_timeout: %d\n",
 			trf->state, trf->ignore_timeout);
 
 	mutex_lock(&trf->lock);
@@ -1029,7 +1029,7 @@ static int trf7970a_init(struct trf7970a *trf)
 {
 	int ret;
 
-	dev_err(trf->dev, "Initializing device - state: %d\n", trf->state);
+	dev_dbg(trf->dev, "Initializing device - state: %d\n", trf->state);
 
 	ret = trf7970a_cmd(trf, TRF7970A_CMD_SOFT_INIT);
 	if (ret)
@@ -1065,7 +1065,7 @@ static int trf7970a_init(struct trf7970a *trf)
 	return 0;
 
 err_out:
-	dev_err(trf->dev, "Couldn't init device: %d\n", ret);
+	dev_dbg(trf->dev, "Couldn't init device: %d\n", ret);
 	return ret;
 }
 
@@ -1075,7 +1075,7 @@ static void trf7970a_switch_rf_off(struct trf7970a *trf)
 			(trf->state == TRF7970A_ST_RF_OFF))
 		return;
 
-	dev_err(trf->dev, "Switching rf off\n");
+	dev_dbg(trf->dev, "Switching rf off\n");
 
 	trf->chip_status_ctrl &= ~TRF7970A_CHIP_STATUS_RF_ON;
 
@@ -1092,7 +1092,7 @@ static int trf7970a_switch_rf_on(struct trf7970a *trf)
 {
 	int ret;
 
-	dev_err(trf->dev, "Switching rf on\n");
+	dev_dbg(trf->dev, "Switching rf on\n");
 
 	pm_runtime_get_sync(trf->dev);
 
@@ -1118,7 +1118,7 @@ static int trf7970a_switch_rf(struct nfc_digital_dev *ddev, bool on)
 	struct trf7970a *trf = nfc_digital_get_drvdata(ddev);
 	int ret = 0;
 
-	dev_err(trf->dev, "Switching RF - state: %d, on: %d\n", trf->state, on);
+	dev_dbg(trf->dev, "Switching RF - state: %d, on: %d\n", trf->state, on);
 
 	mutex_lock(&trf->lock);
 
@@ -1163,7 +1163,7 @@ static int trf7970a_in_config_rf_tech(struct trf7970a *trf, int tech)
 {
 	int ret = 0;
 
-	dev_err(trf->dev, "rf technology: %d\n", tech);
+	dev_dbg(trf->dev, "rf technology: %d\n", tech);
 
 	switch (tech) {
 	case NFC_DIGITAL_RF_TECH_106A:
@@ -1192,7 +1192,7 @@ static int trf7970a_in_config_rf_tech(struct trf7970a *trf, int tech)
 		trf->guard_time = TRF7970A_GUARD_TIME_15693;
 		break;
 	default:
-		dev_err(trf->dev, "Unsupported rf technology: %d\n", tech);
+		dev_dbg(trf->dev, "Unsupported rf technology: %d\n", tech);
 		return -EINVAL;
 	}
 
@@ -1248,7 +1248,7 @@ static int trf7970a_in_config_framing(struct trf7970a *trf, int framing)
 	bool is_rf_field = false;
 	int ret;
 
-	dev_err(trf->dev, "framing: %d\n", framing);
+	dev_dbg(trf->dev, "framing: %d\n", framing);
 
 	switch (framing) {
 	case NFC_DIGITAL_FRAMING_NFCA_SHORT:
@@ -1274,7 +1274,7 @@ static int trf7970a_in_config_framing(struct trf7970a *trf, int framing)
 		iso_ctrl |= TRF7970A_ISO_CTRL_RX_CRC_N;
 		break;
 	default:
-		dev_err(trf->dev, "Unsupported Framing: %d\n", framing);
+		dev_dbg(trf->dev, "Unsupported Framing: %d\n", framing);
 		return -EINVAL;
 	}
 
@@ -1323,7 +1323,7 @@ static int trf7970a_in_configure_hw(struct nfc_digital_dev *ddev, int type,
 	struct trf7970a *trf = nfc_digital_get_drvdata(ddev);
 	int ret;
 
-	dev_err(trf->dev, "Configure hw - type: %d, param: %d\n", type, param);
+	dev_dbg(trf->dev, "Configure hw - type: %d, param: %d\n", type, param);
 
 	mutex_lock(&trf->lock);
 
@@ -1344,7 +1344,7 @@ static int trf7970a_in_configure_hw(struct nfc_digital_dev *ddev, int type,
 		ret = trf7970a_in_config_framing(trf, param);
 		break;
 	default:
-		dev_err(trf->dev, "Unknown type: %d\n", type);
+		dev_dbg(trf->dev, "Unknown type: %d\n", type);
 		ret = -EINVAL;
 	}
 
@@ -1448,7 +1448,7 @@ static int trf7970a_send_cmd(struct nfc_digital_dev *ddev,
 	int ret;
 	u8 status;
 
-	dev_err(trf->dev, "New request - state: %d, timeout: %d ms, len: %d\n",
+	dev_dbg(trf->dev, "New request - state: %d, timeout: %d ms, len: %d\n",
 			trf->state, timeout, skb->len);
 
 	if (skb->len > TRF7970A_TX_MAX)
@@ -1465,7 +1465,7 @@ static int trf7970a_send_cmd(struct nfc_digital_dev *ddev,
 	}
 
 	if (trf->aborting) {
-		dev_err(trf->dev, "Abort process complete\n");
+		dev_dbg(trf->dev, "Abort process complete\n");
 		trf->aborting = false;
 		ret = -ECANCELED;
 		goto out_err;
@@ -1475,7 +1475,7 @@ static int trf7970a_send_cmd(struct nfc_digital_dev *ddev,
 		trf->rx_skb = nfc_alloc_recv_skb(TRF7970A_RX_SKB_ALLOC_SIZE,
 				GFP_KERNEL);
 		if (!trf->rx_skb) {
-			dev_err(trf->dev, "Can't alloc rx_skb\n");
+			dev_dbg(trf->dev, "Can't alloc rx_skb\n");
 			ret = -ENOMEM;
 			goto out_err;
 		}
@@ -1546,7 +1546,7 @@ static int trf7970a_tg_config_rf_tech(struct trf7970a *trf, int tech)
 {
 	int ret = 0;
 
-	dev_err(trf->dev, "rf technology: %d\n", tech);
+	dev_dbg(trf->dev, "rf technology: %d\n", tech);
 
 	switch (tech) {
 	case NFC_DIGITAL_RF_TECH_106A:
@@ -1566,7 +1566,7 @@ static int trf7970a_tg_config_rf_tech(struct trf7970a *trf, int tech)
 		trf->modulator_sys_clk_ctrl = TRF7970A_MODULATOR_DEPTH_ASK10;
 		break;
 	default:
-		dev_err(trf->dev, "Unsupported rf technology: %d\n", tech);
+		dev_dbg(trf->dev, "Unsupported rf technology: %d\n", tech);
 		return -EINVAL;
 	}
 
@@ -1601,7 +1601,7 @@ static int trf7970a_tg_config_framing(struct trf7970a *trf, int framing)
 	u8 iso_ctrl = trf->iso_ctrl_tech;
 	int ret;
 
-	dev_err(trf->dev, "framing: %d\n", framing);
+	dev_dbg(trf->dev, "framing: %d\n", framing);
 
 	switch (framing) {
 	case NFC_DIGITAL_FRAMING_NFCA_NFC_DEP:
@@ -1623,7 +1623,7 @@ static int trf7970a_tg_config_framing(struct trf7970a *trf, int framing)
 		iso_ctrl &= ~TRF7970A_ISO_CTRL_RX_CRC_N;
 		break;
 	default:
-		dev_err(trf->dev, "Unsupported Framing: %d\n", framing);
+		dev_dbg(trf->dev, "Unsupported Framing: %d\n", framing);
 		return -EINVAL;
 	}
 
@@ -1661,7 +1661,7 @@ static int trf7970a_tg_configure_hw(struct nfc_digital_dev *ddev, int type,
 	struct trf7970a *trf = nfc_digital_get_drvdata(ddev);
 	int ret;
 
-	dev_err(trf->dev, "Configure hw - type: %d, param: %d\n", type, param);
+	dev_dbg(trf->dev, "Configure hw - type: %d, param: %d\n", type, param);
 
 	mutex_lock(&trf->lock);
 
@@ -1682,7 +1682,7 @@ static int trf7970a_tg_configure_hw(struct nfc_digital_dev *ddev, int type,
 		ret = trf7970a_tg_config_framing(trf, param);
 		break;
 	default:
-		dev_err(trf->dev, "Unknown type: %d\n", type);
+		dev_dbg(trf->dev, "Unknown type: %d\n", type);
 		ret = -EINVAL;
 	}
 
@@ -1708,7 +1708,7 @@ static int _trf7970a_tg_listen(struct nfc_digital_dev *ddev, u16 timeout,
 	}
 
 	if (trf->aborting) {
-		dev_err(trf->dev, "Abort process complete\n");
+		dev_dbg(trf->dev, "Abort process complete\n");
 		trf->aborting = false;
 		ret = -ECANCELED;
 		goto out_err;
@@ -1717,7 +1717,7 @@ static int _trf7970a_tg_listen(struct nfc_digital_dev *ddev, u16 timeout,
 	trf->rx_skb = nfc_alloc_recv_skb(TRF7970A_RX_SKB_ALLOC_SIZE,
 			GFP_KERNEL);
 	if (!trf->rx_skb) {
-		dev_err(trf->dev, "Can't alloc rx_skb\n");
+		dev_dbg(trf->dev, "Can't alloc rx_skb\n");
 		ret = -ENOMEM;
 		goto out_err;
 	}
@@ -1770,7 +1770,7 @@ static int trf7970a_tg_listen(struct nfc_digital_dev *ddev, u16 timeout,
 {
 	struct trf7970a *trf = nfc_digital_get_drvdata(ddev);
 
-	dev_err(trf->dev, "Listen - state: %d, timeout: %d ms\n",
+	dev_dbg(trf->dev, "Listen - state: %d, timeout: %d ms\n",
 			trf->state, timeout);
 
 	return _trf7970a_tg_listen(ddev, timeout, cb, arg, false);
@@ -1782,7 +1782,7 @@ static int trf7970a_tg_listen_md(struct nfc_digital_dev *ddev,
 	struct trf7970a *trf = nfc_digital_get_drvdata(ddev);
 	int ret;
 
-	dev_err(trf->dev, "Listen MD - state: %d, timeout: %d ms\n",
+	dev_dbg(trf->dev, "Listen MD - state: %d, timeout: %d ms\n",
 			trf->state, timeout);
 
 	ret = trf7970a_tg_configure_hw(ddev, NFC_DIGITAL_CONFIG_RF_TECH,
@@ -1802,7 +1802,7 @@ static int trf7970a_tg_get_rf_tech(struct nfc_digital_dev *ddev, u8 *rf_tech)
 {
 	struct trf7970a *trf = nfc_digital_get_drvdata(ddev);
 
-	dev_err(trf->dev, "Get RF Tech - state: %d, rf_tech: %d\n",
+	dev_dbg(trf->dev, "Get RF Tech - state: %d, rf_tech: %d\n",
 			trf->state, trf->md_rf_tech);
 
 	*rf_tech = trf->md_rf_tech;
@@ -1814,7 +1814,7 @@ static void trf7970a_abort_cmd(struct nfc_digital_dev *ddev)
 {
 	struct trf7970a *trf = nfc_digital_get_drvdata(ddev);
 
-	dev_err(trf->dev, "Abort process initiated\n");
+	dev_dbg(trf->dev, "Abort process initiated\n");
 
 	mutex_lock(&trf->lock);
 
@@ -1828,7 +1828,7 @@ static void trf7970a_abort_cmd(struct nfc_digital_dev *ddev)
 	case TRF7970A_ST_LISTENING:
 		trf->ignore_timeout = !cancel_delayed_work(&trf->timeout_work);
 		trf7970a_send_err_upstream(trf, -ECANCELED);
-		dev_err(trf->dev, "Abort process complete\n");
+		dev_dbg(trf->dev, "Abort process complete\n");
 		break;
 	default:
 		break;
@@ -1853,7 +1853,7 @@ static int trf7970a_power_up(struct trf7970a *trf)
 {
 	int ret;
 
-	dev_err(trf->dev, "Powering up - state: %d\n", trf->state);
+	dev_dbg(trf->dev, "Powering up - state: %d\n", trf->state);
 
 	if (trf->state != TRF7970A_ST_PWR_OFF)
 		return 0;
@@ -1884,13 +1884,13 @@ static int trf7970a_power_down(struct trf7970a *trf)
 {
 	int ret;
 
-	dev_err(trf->dev, "Powering down - state: %d\n", trf->state);
+	dev_dbg(trf->dev, "Powering down - state: %d\n", trf->state);
 
 	if (trf->state == TRF7970A_ST_PWR_OFF)
 		return 0;
 
 	if (trf->state != TRF7970A_ST_RF_OFF) {
-		dev_err(trf->dev, "Can't power down - not RF_OFF state (%d)\n",
+		dev_dbg(trf->dev, "Can't power down - not RF_OFF state (%d)\n",
 				trf->state);
 		return -EBUSY;
 	}
@@ -2125,7 +2125,7 @@ static int trf7970a_suspend(struct device *dev)
 	struct spi_device *spi = container_of(dev, struct spi_device, dev);
 	struct trf7970a *trf = spi_get_drvdata(spi);
 
-	dev_err(dev, "Suspend\n");
+	dev_dbg(dev, "Suspend\n");
 
 	mutex_lock(&trf->lock);
 
@@ -2142,7 +2142,7 @@ static int trf7970a_resume(struct device *dev)
 	struct trf7970a *trf = spi_get_drvdata(spi);
 	int ret;
 
-	dev_err(dev, "Resume\n");
+	dev_dbg(dev, "Resume\n");
 
 	mutex_lock(&trf->lock);
 
@@ -2161,7 +2161,7 @@ static int trf7970a_pm_runtime_suspend(struct device *dev)
 	struct trf7970a *trf = spi_get_drvdata(spi);
 	int ret;
 
-	dev_err(dev, "Runtime suspend\n");
+	dev_dbg(dev, "Runtime suspend\n");
 
 	mutex_lock(&trf->lock);
 
@@ -2178,7 +2178,7 @@ static int trf7970a_pm_runtime_resume(struct device *dev)
 	struct trf7970a *trf = spi_get_drvdata(spi);
 	int ret;
 
-	dev_err(dev, "Runtime resume\n");
+	dev_dbg(dev, "Runtime resume\n");
 
 	ret = trf7970a_power_up(trf);
 	if (!ret)
