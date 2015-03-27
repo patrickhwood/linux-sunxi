@@ -1212,30 +1212,25 @@ static int trf7970a_in_config_rf_tech(struct trf7970a *trf, int tech)
 static int trf7970a_is_rf_field(struct trf7970a *trf, bool *is_rf_field)
 {
 	int ret;
-	u8 rssi;
+	u8 protocol;
 
-	ret = trf7970a_write(trf, TRF7970A_CHIP_STATUS_CTRL,
-			trf->chip_status_ctrl | TRF7970A_CHIP_STATUS_REC_ON);
+	/*
+	** The assumption here is that this function is attempting to determine
+	** whether there's any incoming RF activity.  Checking bits 6 and 7 of
+	** the NFC Target Protocol register is a better choice than running
+	** an external RSSI measurement: these bits will be on if the chip is
+	** in receive mode and it has detected an RF field that is above both the
+	** wake up and collision avoidance levels.
+	*/
+	ret = trf7970a_read(trf, TRF79070A_NFC_TARGET_PROTOCOL, &protocol);
 	if (ret)
 		return ret;
 
-	ret = trf7970a_cmd(trf, TRF7970A_CMD_TEST_EXT_RF);
-	if (ret)
-		return ret;
-
-	usleep_range(50, 60);
-
-	ret = trf7970a_read(trf, TRF7970A_RSSI_OSC_STATUS, &rssi);
-	if (ret)
-		return ret;
-
-	ret = trf7970a_write(trf, TRF7970A_CHIP_STATUS_CTRL,
-			trf->chip_status_ctrl);
-	if (ret)
-		return ret;
-
-	if (rssi & TRF7970A_RSSI_OSC_STATUS_RSSI_MASK)
+	if (protocol & (TRF79070A_NFC_TARGET_PROTOCOL_RF_L |
+	               TRF79070A_NFC_TARGET_PROTOCOL_RF_H)) {
 		*is_rf_field = true;
+		dev_err(trf->dev, "protocol: %x\n", protocol);
+	}
 	else
 		*is_rf_field = false;
 
