@@ -50,6 +50,18 @@
 #define FINGER00_REG       0x7C
 #define DEVICE_CHANEL_REG  0x06
 
+/* detection level register settings */
+/* see registers 0x33, 0x34, and 0x35 in the Solomon Systech manual */
+static unsigned int min_area = 1;
+static unsigned int min_level = 0x80;
+static unsigned int min_weight = 1;
+static unsigned int update = 0;
+
+module_param(min_area, uint, S_IRUGO | S_IWUSR);
+module_param(min_level, uint, S_IRUGO | S_IWUSR);
+module_param(min_weight, uint, S_IRUGO | S_IWUSR);
+module_param(update, uint, S_IWUSR);
+
 struct ChipSetting
 {
 	char No;
@@ -91,7 +103,6 @@ static const struct ChipSetting ssdcfgTable[] = {
 	{2,0xD8,0x00,0x07},
 	{2,0xDB,0x00,0x02},
 	{2,0x30,0x08,0x0D},
-	{2,0x34,0x00,0x80},
 	{2,0x36,0x00,0x1A},
 	{2,0x3A,0x00,0x00},
 	{2,0x65,0x00,0x04},
@@ -266,10 +277,24 @@ static int ssd_tp_init(struct ssl_ts_priv *ts)
 {
 	unsigned char buf[4]={0};
 	int i;
+	const struct ChipSetting detect_table[3] = {
+		{2,0x33,0x00,min_area & 0xff},
+		{2,0x34,0x00,min_level & 0xff},
+		{2,0x35,min_weight >> 8,min_weight & 0xff},
+	};
 
-	dev_info(&ts->client->dev, "%s    \n", __func__);
+	dev_err(&ts->client->dev, "%s    \n", __func__);
 
 	//init chip config
+	// write out detection threshold registers
+	for (i = 0; i < sizeof(detect_table)/sizeof(detect_table[0]); i++)
+	{
+		buf[0] = detect_table[i].Data1;
+		buf[1] = detect_table[i].Data2;
+		if (ssd_i2c_write(ts->client, detect_table[i].Reg, buf, detect_table[i].No) < 0)
+			return -1;
+	}
+	// write out constant register initializations
 	for (i = 0; i < sizeof(ssdcfgTable)/sizeof(ssdcfgTable[0]); i++)
 	{
 		buf[0] = ssdcfgTable[i].Data1;
@@ -407,6 +432,11 @@ static void ssd_ts_work(struct work_struct *work)
 #ifdef SSD_POLL
 	hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_PERIOD), HRTIMER_MODE_REL);
 #endif
+
+	if(update) {
+		update = 0;
+		ssd_tp_init(ts);
+	}
 
 	return;
 }
