@@ -48,13 +48,11 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_CSI0_DAT10__UART1_TXD,
 	MX6DL_PAD_CSI0_DAT11__UART1_RXD,
 
+#ifdef CONFIG_MX6DL_UIB_REV_1
 	/* USB */
 	/* USB_OTG_PWR_EN */
 	MX6DL_PAD_EIM_D22__GPIO_3_22,
 	/* MX6DL_PAD_EIM_D21__USBOH3_USBOTG_OC, */
-	/*USB_H1 PWR EN*/
-#ifndef CONFIG_MX6DL_UIB_REV_1
-	MX6DL_PAD_ENET_TXD1__GPIO_1_29,
 #endif
 
 	/* USDHC2 */
@@ -116,6 +114,8 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	/*WDOG_B to reset pmic*/
 	MX6DL_PAD_GPIO_1__WDOG2_WDOG_B,
 
+	/* LED0 */
+	MX6DL_PAD_GPIO_2__GPIO_1_2,
 	/* LED1 */
 	MX6DL_PAD_GPIO_5__GPIO_1_5,
 	/* LED2 */
@@ -131,8 +131,10 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	/* LCD CNTRL_VGH */
 	MX6DL_PAD_SD4_DAT2__GPIO_2_10,
 
+#ifdef CONFIG_MX6DL_UIB_REV_1
 	/* PWM speaker */
 	MX6DL_PAD_SD4_DAT1__PWM3_PWMO,
+#endif
 
 	/* OSD/SSD2543 touch panel IRQ */
 	MX6DL_PAD_EIM_D23__GPIO_3_23,

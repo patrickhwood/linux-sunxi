@@ -87,7 +87,7 @@
 #define UIB_LCD_EN			IMX_GPIO_NR(7, 12)
 #define UIB_LCD_CNTRL_VGH	IMX_GPIO_NR(2, 10)
 
-#define UIB_LED0	IMX_GPIO_NR(x, y)		// not assigned yet
+#define UIB_LED0	IMX_GPIO_NR(1, 2)
 #define UIB_LED1	IMX_GPIO_NR(1, 5)
 #define UIB_LED2	IMX_GPIO_NR(1, 7)
 #define UIB_LED3	IMX_GPIO_NR(1, 8)
@@ -724,7 +724,7 @@ static void gps_power_on(bool on)
 
 static struct gpio_led imx6q_gpio_leds[] = {
 	/* set 4th argument to 1 to keep LED on during suspend */
-	/* GPIO_LED(UIB_LED0, "led0", 0, 0, ""), GPIO not assigned yet */
+	GPIO_LED(UIB_LED0, "led0", 0, 0, ""),
 	GPIO_LED(UIB_LED1, "led1", 0, 0, ""),
 	GPIO_LED(UIB_LED2, "led2", 0, 0, ""),
 	GPIO_LED(UIB_LED3, "led3", 0, 0, ""),
@@ -974,14 +974,13 @@ static void __init mx6_sabresd_board_init(void)
 		gpio_direction_output(PMIC_STBY, 0);
 		// allow sysfs to modify this gpio for testing
 		gpio_export(PMIC_STBY, false);
-#endif
 
 		// @@@ power down Micrel RGMII phy
 #define MICREL_STBY IMX_GPIO_NR(6, 29)
 		mxc_iomux_v3_setup_pad(MX6DL_PAD_RGMII_RD3__GPIO_6_29);
 		gpio_request(MICREL_STBY, "");
 		gpio_direction_output(MICREL_STBY, 0);
-
+#endif
 	}
 
 	gpio_request(UIB_LCD_EN, "LCD_EN");
