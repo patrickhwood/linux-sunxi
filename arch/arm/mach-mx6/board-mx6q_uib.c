@@ -813,9 +813,11 @@ static struct platform_pwm_backlight_data mx6_sabresd_pwm_backlight_data = {
 	.pwm_period_ns = 50000,
 };
 
+#ifdef CONFIG_MX6DL_UIB_REV_1
 static struct platform_pwm_generic_data mx6_sabresd_pwm_speaker = {
 	.pwm_id = 2,
 };
+#endif
 
 #ifdef SABRE
 static struct platform_ir_data mx6_sabresd_ir_data = {
@@ -1160,8 +1162,10 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
 	imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
+#ifdef CONFIG_MX6DL_UIB_REV_1
 	platform_device_register_resndata(NULL, "pwm-generic", 2, NULL, 0,
 		&mx6_sabresd_pwm_speaker, sizeof(mx6_sabresd_pwm_speaker));
+#endif
 
 #ifdef SABRE
 	/* add MXC IR device */
