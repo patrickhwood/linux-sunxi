@@ -131,6 +131,9 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 #ifdef CONFIG_MX6DL_UIB_REV_1
 	/* LCD CNTRL_VGH */
 	MX6DL_PAD_SD4_DAT2__GPIO_2_10,
+
+	/* PWM speaker */
+	MX6DL_PAD_SD4_DAT1__PWM3_PWMO,
 #else
 	/* LCD PWR_EN */
 	MX6DL_PAD_EIM_D20__GPIO_3_20,
@@ -138,16 +141,22 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_EIM_D25__GPIO_3_25,
 	/* LCD RESET */
 	MX6DL_PAD_EIM_D27__GPIO_3_27,
-#endif
 
-#ifdef CONFIG_MX6DL_UIB_REV_1
-	/* PWM speaker */
-	MX6DL_PAD_SD4_DAT1__PWM3_PWMO,
+	/* Power state GPIOs */
+	/* FIERY_ON_EN */
+	MX6DL_PAD_KEY_ROW1__GPIO_4_9,
+	/* S3_PWR_MODE */
+	MX6DL_PAD_KEY_COL4__GPIO_4_14,
+	/* SERVER_S5 */
+	MX6DL_PAD_GPIO_0__GPIO_1_0,
 #endif
 
 	/* OSD/SSD2543 touch panel IRQ */
 	MX6DL_PAD_EIM_D23__GPIO_3_23,
 	/* OSD/SSD2543 touch panel reset */
 	MX6DL_PAD_EIM_D24__GPIO_3_24,
+
+	/* PMIC_STBY/RECOVERY_BOOT_LATCH */
+	MX6DL_PAD_EIM_D16__GPIO_3_16,
 };
 #endif
