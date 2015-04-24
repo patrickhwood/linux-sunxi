@@ -981,28 +981,23 @@ static void __init mx6_sabresd_board_init(void)
 	} else if (cpu_is_mx6dl()) {
 		mxc_iomux_v3_setup_multiple_pads(mx6dl_sabresd_pads,
 			ARRAY_SIZE(mx6dl_sabresd_pads));
-
-#ifdef CONFIG_MX6DL_UIB_REV_1
-		// drive PMIC standby pad low
-		// @@@ note: this is changing to the iMX6 PMIC_STBY_REQ pin in Rev 2
-#define PMIC_STBY IMX_GPIO_NR(3, 16)
-		mxc_iomux_v3_setup_pad(MX6DL_PAD_EIM_D16__GPIO_3_16);
-		gpio_request(PMIC_STBY, "");
-		gpio_direction_output(PMIC_STBY, 0);
-		// allow sysfs to modify this gpio for testing
-		gpio_export(PMIC_STBY, false);
-
-		// @@@ power down Micrel RGMII phy
-#define MICREL_STBY IMX_GPIO_NR(6, 29)
-		mxc_iomux_v3_setup_pad(MX6DL_PAD_RGMII_RD3__GPIO_6_29);
-		gpio_request(MICREL_STBY, "");
-		gpio_direction_output(MICREL_STBY, 0);
-#endif
 	}
 
-	gpio_request(UIB_LVDS_EN, "LVDS_EN");
-	gpio_direction_output(UIB_LVDS_EN, 1);
 #ifdef CONFIG_MX6DL_UIB_REV_1
+	// drive PMIC standby pad low
+	// @@@ note: this is changing to the iMX6 PMIC_STBY_REQ pin in Rev 2
+#define PMIC_STBY IMX_GPIO_NR(3, 16)
+	gpio_request(PMIC_STBY, "");
+	gpio_direction_output(PMIC_STBY, 0);
+	// allow sysfs to modify this gpio for testing
+	gpio_export(PMIC_STBY, false);
+
+	// @@@ power down Micrel RGMII phy
+#define MICREL_STBY IMX_GPIO_NR(6, 29)
+	mxc_iomux_v3_setup_pad(MX6DL_PAD_RGMII_RD3__GPIO_6_29);
+	gpio_request(MICREL_STBY, "");
+	gpio_direction_output(MICREL_STBY, 0);
+
 	gpio_request(UIB_LCD_CNTRL_VGH, "LCD_CNTRL_VGH");
 	gpio_direction_output(UIB_LCD_CNTRL_VGH, 1);
 #else
@@ -1013,6 +1008,9 @@ static void __init mx6_sabresd_board_init(void)
 	gpio_request(UIB_LCD_RESET, "LCD_RESET");
 	gpio_direction_output(UIB_LCD_RESET, 1);
 #endif
+
+	gpio_request(UIB_LVDS_EN, "LVDS_EN");
+	gpio_direction_output(UIB_LVDS_EN, 1);
 
 #ifdef CONFIG_FEC_1588
 	/* Set GPIO_16 input for IEEE-1588 ts_clk and RMII reference clock
