@@ -122,6 +122,7 @@ static int uibhub_probe(struct i2c_client *client,
 {
 	struct uib_hub_priv *hub;
 	unsigned char buf[4];
+	unsigned char status;
 	int err = 0;
 
 	dev_err(&client->dev, "%s:\n",__func__);
@@ -184,9 +185,14 @@ static int uibhub_probe(struct i2c_client *client,
 		goto err_free_mem;
 	}
 
+	if (hub_i2c_read(hub->client, STATUS_REG, &status) < 0) {
+		err = -EIO;
+		goto err_free_mem;
+	}
+
 	dev_err(&client->dev,
-		"%s: registered hub: VID = %02x%02x, PID = %02x%02x\n",
-		__func__, buf[1], buf[0], buf[3], buf[2]);
+		"%s: registered hub: VID = %02x%02x, PID = %02x%02x, status = %x\n",
+		__func__, buf[1], buf[0], buf[3], buf[2], status);
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	hub->early_suspend.suspend = uibhub_early_suspend;
