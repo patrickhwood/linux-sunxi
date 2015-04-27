@@ -288,6 +288,11 @@ static struct imxi2c_platform_data mx6q_sabresd_i2c_data = {
 };
 
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
+#ifdef CONFIG_MX6DL_UIB_REV_2
+	{
+		I2C_BOARD_INFO("uibhub", 0x40),
+	},
+#endif
 };
 
 static struct i2c_board_info mxc_i2c1_board_info[] __initdata = {
@@ -1089,8 +1094,10 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_imx_i2c(0, &mx6q_sabresd_i2c_data);
 	imx6q_add_imx_i2c(1, &mx6q_sabresd_i2c_data);
 	imx6q_add_imx_i2c(2, &mx6q_sabresd_i2c_data);
+#ifdef SABRE
 	if (cpu_is_mx6dl())
 		imx6q_add_imx_i2c(3, &mx6q_sabresd_i2c_data);
+#endif
 
 	gpio_request(UIB_TOUCH_RESET, "SSD-RESET");
 	gpio_request(UIB_TOUCH_IRQ, "SSD-IRQ");

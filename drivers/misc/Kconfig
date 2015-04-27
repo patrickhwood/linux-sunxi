@@ -538,6 +538,11 @@ config APANIC_PLABEL
 	 If your platform uses a different flash partition label for storing
  	 crashdumps, enter it here.
 
+config UIB_HUB
+	bool "UIB USB Hub"
+	depends on MX6DL_UIB_REV_2
+	default y
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
