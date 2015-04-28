@@ -92,6 +92,8 @@
  #define UIB_LCD_PWR_EN IMX_GPIO_NR(3, 20)
  #define UIB_LCD_STBYB IMX_GPIO_NR(3, 25)
  #define UIB_LCD_RESET IMX_GPIO_NR(3, 27)
+
+ #define UIB_USB_HUB_RESET    IMX_GPIO_NR(5, 30)
 #endif
 
 #define UIB_LED0	IMX_GPIO_NR(1, 2)
@@ -287,10 +289,13 @@ static struct imxi2c_platform_data mx6q_sabresd_i2c_data = {
 	.bitrate = 100000,
 };
 
+static unsigned int HUB_platform_data[1] = {UIB_USB_HUB_RESET};
+
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 #ifdef CONFIG_MX6DL_UIB_REV_2
 	{
 		I2C_BOARD_INFO("uibhub", 0x40),
+		.platform_data = HUB_platform_data,
 	},
 #endif
 };
@@ -1101,6 +1106,8 @@ static void __init mx6_sabresd_board_init(void)
 
 	gpio_request(UIB_TOUCH_RESET, "SSD-RESET");
 	gpio_request(UIB_TOUCH_IRQ, "SSD-IRQ");
+
+	gpio_request(UIB_USB_HUB_RESET, "HUB-RESET");
 
 	i2c_register_board_info(0, mxc_i2c0_board_info,
 			ARRAY_SIZE(mxc_i2c0_board_info));

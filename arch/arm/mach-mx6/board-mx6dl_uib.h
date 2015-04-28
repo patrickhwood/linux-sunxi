@@ -32,15 +32,15 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_DISP0_DAT8__GPIO_4_29,
 	MX6DL_PAD_DISP0_DAT9__GPIO_4_30,
 
-	/* I2C1 */
+	/* I2C1 (USB Hub) */
 	MX6DL_PAD_CSI0_DAT8__I2C1_SDA,
 	MX6DL_PAD_CSI0_DAT9__I2C1_SCL,
 
-	/* I2C2 */
+	/* I2C2 (PMIC) */
 	MX6DL_PAD_KEY_COL3__I2C2_SCL,
 	MX6DL_PAD_KEY_ROW3__I2C2_SDA,
 
-	/* I2C3 */
+	/* I2C3 (SSD Touchscreen) */
 	MX6DL_PAD_GPIO_3__I2C3_SCL,
 	MX6DL_PAD_GPIO_6__I2C3_SDA,
 
@@ -149,6 +149,9 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_KEY_COL4__GPIO_4_14,
 	/* SERVER_S5 */
 	MX6DL_PAD_GPIO_0__GPIO_1_0,
+
+	/* USB Hub reset */
+	MX6DL_PAD_CSI0_DAT12__GPIO_5_30,
 #endif
 
 	/* OSD/SSD2543 touch panel IRQ */

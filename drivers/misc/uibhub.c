@@ -11,6 +11,7 @@
 #include <linux/module.h>
 #include <linux/i2c.h>
 #include <linux/delay.h>
+#include <linux/gpio.h>
 #include <linux/slab.h>
 #ifdef CONFIG_HAS_EARLYSUSPEND
 # include <linux/earlysuspend.h>
@@ -100,20 +101,31 @@ static int hub_i2c_write(struct i2c_client *client, uint8_t reg, uint8_t data)
 static void uibhub_late_resume(struct early_suspend *early_s)
 {
 	struct uib_hub_priv *hub = container_of(early_s, struct uib_hub_priv, early_suspend);
+	unsigned char status = 0xff;
 
-	dev_info(&hub->client->dev, "%s\n", __func__);
+	// clear cfgActive bit in status register to resume operation
+	// after reset
+	if (hub_i2c_write(hub->client, STATUS_REG, 0x01) < 0) {
+	        dev_err(&hub->client->dev, "%s: error clearing status reg\n", __func__);
+	}
 
-	// write Resume commands to hub
-	// hub_i2c_write(hub->client, Reg, val);
+	hub_i2c_read(hub->client, STATUS_REG, &status);
+	dev_info(&hub->client->dev, "%s: status = %x\n", __func__, status);
 }
 static void uibhub_early_suspend(struct early_suspend *early_s)
 {
 	struct uib_hub_priv *hub = container_of(early_s, struct uib_hub_priv, early_suspend);
+	unsigned int *HUB_gpios = (unsigned int *) hub->client->dev.platform_data;
+	unsigned char status = 0xff;
 
-	dev_info(&hub->client->dev, "%s\n", __func__);
+	// reset hub to put into lower power mode
+	gpio_set_value(HUB_gpios[0], 0);
+	mdelay(5);
+	gpio_set_value(HUB_gpios[0], 1);
+	mdelay(5);
 
-	// write Suspend commands to hub
-	// hub_i2c_write(hub->client, Reg, val);
+	hub_i2c_read(hub->client, STATUS_REG, &status);
+	dev_info(&hub->client->dev, "%s: status = %x\n", __func__, status);
 }
 #endif /* CONFIG_HAS_EARLYSUSPEND */
 
@@ -124,6 +136,8 @@ static int uibhub_probe(struct i2c_client *client,
 	unsigned char buf[4];
 	unsigned char status;
 	int err = 0;
+	/* reset GPIO NR passed in dev.platform_data */
+	unsigned int *HUB_gpios = (unsigned int *) client->dev.platform_data;
 
 	dev_err(&client->dev, "%s:\n",__func__);
  
@@ -195,6 +209,7 @@ static int uibhub_probe(struct i2c_client *client,
 		__func__, buf[1], buf[0], buf[3], buf[2], status);
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
+	gpio_direction_output(HUB_gpios[0], 1);
 	hub->early_suspend.suspend = uibhub_early_suspend;
 	hub->early_suspend.resume  = uibhub_late_resume;
 	hub->early_suspend.level   = EARLY_SUSPEND_LEVEL_BLANK_SCREEN-2;
