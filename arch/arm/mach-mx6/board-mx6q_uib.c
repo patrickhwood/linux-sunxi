@@ -289,9 +289,12 @@ static struct imxi2c_platform_data mx6q_sabresd_i2c_data = {
 	.bitrate = 100000,
 };
 
+#ifdef CONFIG_MX6DL_UIB_REV_2
+static unsigned int HUB_platform_data[1] = {UIB_USB_HUB_RESET};
+#endif
+
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 #ifdef CONFIG_MX6DL_UIB_REV_2
-	static unsigned int HUB_platform_data[1] = {UIB_USB_HUB_RESET};
 	{
 		I2C_BOARD_INFO("uibhub", 0x40),
 		.platform_data = HUB_platform_data,
