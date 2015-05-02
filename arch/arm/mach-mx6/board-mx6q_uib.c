@@ -289,10 +289,9 @@ static struct imxi2c_platform_data mx6q_sabresd_i2c_data = {
 	.bitrate = 100000,
 };
 
-static unsigned int HUB_platform_data[1] = {UIB_USB_HUB_RESET};
-
 static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 #ifdef CONFIG_MX6DL_UIB_REV_2
+	static unsigned int HUB_platform_data[1] = {UIB_USB_HUB_RESET};
 	{
 		I2C_BOARD_INFO("uibhub", 0x40),
 		.platform_data = HUB_platform_data,
@@ -318,16 +317,6 @@ static struct i2c_board_info mxc_i2c2_board_info[] __initdata = {
 	},
 };
 
-#ifndef CONFIG_MX6DL_UIB_REV_1
-static void imx6q_sabresd_host1_vbus(bool on)
-{
-	if (on)
-		gpio_set_value(SABRESD_USB_H1_PWR, 1);
-	else
-		gpio_set_value(SABRESD_USB_H1_PWR, 0);
-}
-#endif
-
 static void __init imx6q_sabresd_init_usb(void)
 {
 	int ret = 0;
@@ -344,18 +333,6 @@ static void __init imx6q_sabresd_init_usb(void)
 	}
 	// force off, no OTG on UIB
 	gpio_direction_output(SABRESD_USB_OTG_PWR_N, 1);
-
-#ifndef CONFIG_MX6DL_UIB_REV_1
-	/* keep USB host1 VBUS always on */
-	ret = gpio_request(SABRESD_USB_H1_PWR, "usb-h1-pwr");
-	if (ret) {
-		pr_err("failed to get GPIO SABRESD_USB_H1_PWR: %d\n",
-			ret);
-		return;
-	}
-	gpio_direction_output(SABRESD_USB_H1_PWR, 0);
-	mx6_set_host1_vbus_func(imx6q_sabresd_host1_vbus);
-#endif
 
 #ifdef SABRE
 	if (board_is_mx6_reva())
@@ -647,8 +624,10 @@ static void sabresd_suspend_enter(void)
 
 	/* disable LCD */
 	gpio_set_value(UIB_LVDS_EN, 0);
+#ifdef CONFIG_MX6DL_UIB_REV_2
 	gpio_set_value(UIB_LCD_PWR_EN, 0);
 	gpio_set_value(UIB_LCD_STBYB, 0);
+#endif
 }
 
 static void sabresd_suspend_exit(void)
@@ -659,12 +638,14 @@ static void sabresd_suspend_exit(void)
 
 	/* enable LCD */
 	gpio_set_value(UIB_LVDS_EN, 1);
+#ifdef CONFIG_MX6DL_UIB_REV_2
 	gpio_set_value(UIB_LCD_PWR_EN, 1);
 	gpio_set_value(UIB_LCD_STBYB, 1);
 	/* reset LCD */
 	gpio_set_value(UIB_LCD_RESET, 0);
 	mdelay(1);
 	gpio_set_value(UIB_LCD_RESET, 1);
+#endif
 }
 static const struct pm_platform_data mx6q_sabresd_pm_data __initconst = {
 	.name = "imx_pm",
@@ -1107,7 +1088,9 @@ static void __init mx6_sabresd_board_init(void)
 	gpio_request(UIB_TOUCH_RESET, "SSD-RESET");
 	gpio_request(UIB_TOUCH_IRQ, "SSD-IRQ");
 
+#ifdef CONFIG_MX6DL_UIB_REV_2
 	gpio_request(UIB_USB_HUB_RESET, "HUB-RESET");
+#endif
 
 	i2c_register_board_info(0, mxc_i2c0_board_info,
 			ARRAY_SIZE(mxc_i2c0_board_info));
