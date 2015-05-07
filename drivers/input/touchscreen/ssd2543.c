@@ -32,6 +32,7 @@
 #include <linux/slab.h>
 #ifdef CONFIG_HAS_EARLYSUSPEND
 # include <linux/earlysuspend.h>
+# include <linux/suspend.h>
 #endif
 #include <mach/hardware.h>
 
@@ -324,8 +325,11 @@ static void ssd_ts_work(struct work_struct *work)
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	if (ts->suspended) {
-		input_report_key(ts->input, KEY_WAKEUP, 1);
-		input_report_key(ts->input, KEY_WAKEUP, 0);
+		extern void request_suspend_state(suspend_state_t state);
+
+		request_suspend_state(PM_SUSPEND_ON);
+		input_report_key(ts->input, KEY_INFO, 1);
+		input_report_key(ts->input, KEY_INFO, 0);
 		input_sync(ts->input);
 		ts->suspended = false;
 	}
@@ -555,7 +559,7 @@ static int ssd2543_probe(struct i2c_client *client,
 
 	input_dev->evbit[0] = BIT_MASK(EV_SYN) | BIT_MASK(EV_KEY) | BIT_MASK(EV_ABS);
 	input_dev->keybit[BIT_WORD(BTN_TOUCH)] = BIT_MASK(BTN_TOUCH);
-	input_dev->keybit[BIT_WORD(KEY_WAKEUP)] |= BIT_MASK(KEY_WAKEUP);
+	input_dev->keybit[BIT_WORD(KEY_INFO)] |= BIT_MASK(KEY_INFO);
 
 #ifdef MT_SUPPORT
 	input_set_abs_params(input_dev, ABS_MT_POSITION_X,  0, MAX_X, 0, 0);
