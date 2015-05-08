@@ -47,7 +47,9 @@
 #include <linux/memblock.h>
 #include <linux/gpio.h>
 #include <linux/ion.h>
-#include <linux/etherdevice.h>
+#include <linux/module.h>
+#include <linux/suspend.h>
+#include <linux/wakelock.h>
 #include <linux/power/sabresd_battery.h>
 #include <linux/regulator/anatop-regulator.h>
 #include <linux/regulator/consumer.h>
@@ -94,7 +96,16 @@
  #define UIB_LCD_RESET IMX_GPIO_NR(3, 27)
 
  #define UIB_USB_HUB_RESET    IMX_GPIO_NR(5, 30)
-#endif
+
+ // #define TESTS3 // allow S3 signal test on uSD boot jumper
+ #ifdef TESTS3
+  #define UIB_S3_PWR_MODE IMX_GPIO_NR(3, 5)		// boot_cfg jumper
+ #else
+  #define UIB_S3_PWR_MODE IMX_GPIO_NR(4, 14)		// S3 signal
+ #endif
+ #define UIB_SERVER_S5 IMX_GPIO_NR(1, 0)
+ #define UIB_FIERY_ON_EN IMX_GPIO_NR(4, 9)
+#endif // CONFIG_MX6DL_UIB_REV_1
 
 #define UIB_LED0	IMX_GPIO_NR(1, 2)
 #define UIB_LED1	IMX_GPIO_NR(1, 5)
@@ -955,6 +966,103 @@ static int __init imx6x_add_ram_console(void)
 #define imx6x_add_ram_console() do {} while (0)
 #endif
 
+#ifdef CONFIG_MX6DL_UIB_REV_2
+// very basic driver for S3 signal changes
+// make suspend state change requests:
+//   sleep system when S3 transitions to 1
+//   wake up system when S3 transitions to 0
+//   and send INFO key events on wakeup
+
+static struct input_dev *s3_input;
+static struct wake_lock s3_wake_lock;
+
+// IRQ handler
+static irqreturn_t s3_irq(int irq, void *handle)
+{
+	extern void request_suspend_state(suspend_state_t state);
+	int state;
+
+	mdelay(2);	// debounce delay (really only needed for the test harness)
+	state = gpio_get_value(UIB_S3_PWR_MODE);
+
+#ifdef TESTS3
+state = !state;		// invert for pushbutton test
+#endif
+
+	printk("%s: state = %d\n", __func__, state);
+
+	if (!state) {
+		wake_lock(&s3_wake_lock);
+		request_suspend_state(PM_SUSPEND_ON);
+		input_report_key(s3_input, KEY_INFO, 1);
+		input_report_key(s3_input, KEY_INFO, 0);
+		input_sync(s3_input);
+	}
+	else {
+		wake_unlock(&s3_wake_lock);
+		request_suspend_state(PM_SUSPEND_MEM);
+	}
+
+	return IRQ_HANDLED;
+}
+
+// initialize device driver
+static int __init s3_irq_init(void)
+{
+	int err;
+	int irq = gpio_to_irq(UIB_S3_PWR_MODE);
+	spinlock_t lock;
+
+	s3_input = input_allocate_device();
+	if (!s3_input) {
+		printk("%s: error allocating input device\n", __func__);
+		return ENOMEM;
+	}
+
+	s3_input->name = "gpio-keys";
+	s3_input->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_SYN);
+	s3_input->keybit[BIT_WORD(KEY_INFO)] = BIT_MASK(KEY_INFO);
+
+	err = input_register_device(s3_input);
+	if (err < 0) {
+		printk("%s: error registering irq %d\n", __func__, err);
+		input_free_device(s3_input);
+		return err;
+	}
+
+	err = request_irq(irq, s3_irq,
+		IRQF_TRIGGER_RISING |
+		IRQF_TRIGGER_FALLING |
+		IRQF_NO_SUSPEND |
+		IRQF_EARLY_RESUME,
+		"S3_PWR_MODE", (void *) s3_input);
+	if (err < 0) {
+		printk("%s: error requesting irq %d\n", __func__, irq);
+		input_free_device(s3_input);
+		return err;
+	}
+	printk("%s: s3_irq set on %d\n", __func__, irq);
+
+	spin_lock_init(&lock);
+	spin_lock_irq(&lock);
+	wake_lock_init(&s3_wake_lock, WAKE_LOCK_SUSPEND, "S3_PWR_MODE");
+	s3_irq(irq, (void *) s3_input);
+	spin_unlock_irq(&lock);
+
+	return 0;
+}
+
+static void __init s3_irq_exit(void)
+{
+	free_irq(gpio_to_irq(UIB_S3_PWR_MODE), s3_irq);
+	input_unregister_device(s3_input);
+	wake_lock_destroy(&s3_wake_lock);
+}
+
+module_init(s3_irq_init);
+module_exit(s3_irq_exit);
+#endif /* CONFIG_MX6DL_UIB_REV_2 */
+
 /*!
  * Board specific initialization.
  */
@@ -1265,6 +1373,20 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_perfmon(0);
 	imx6q_add_perfmon(1);
 	imx6q_add_perfmon(2);
+
+#ifdef CONFIG_MX6DL_UIB_REV_2
+	gpio_request(UIB_FIERY_ON_EN, "fiery-on-enable");
+	gpio_direction_output(UIB_FIERY_ON_EN, 1);
+	gpio_export(UIB_FIERY_ON_EN, false);
+
+	gpio_request(UIB_SERVER_S5, "server-s5");
+	gpio_direction_input(UIB_SERVER_S5);
+	gpio_export(UIB_SERVER_S5, false);
+
+	gpio_request(UIB_S3_PWR_MODE, "s3-pwr-mode");
+	gpio_direction_input(UIB_S3_PWR_MODE);
+	gpio_export(UIB_S3_PWR_MODE, false);
+#endif
 }
 
 extern void __iomem *twd_base;
