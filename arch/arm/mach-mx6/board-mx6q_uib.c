@@ -1376,7 +1376,7 @@ static void __init mx6_sabresd_board_init(void)
 
 #ifdef CONFIG_MX6DL_UIB_REV_2
 	gpio_request(UIB_FIERY_ON_EN, "fiery-on-enable");
-	gpio_direction_output(UIB_FIERY_ON_EN, 1);
+	gpio_direction_output(UIB_FIERY_ON_EN, 0);
 	gpio_export(UIB_FIERY_ON_EN, false);
 
 	gpio_request(UIB_SERVER_S5, "server-s5");
