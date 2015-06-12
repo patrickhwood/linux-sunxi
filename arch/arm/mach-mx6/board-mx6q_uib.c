@@ -982,6 +982,10 @@ static irqreturn_t s3_irq(int irq, void *handle)
 	extern void request_suspend_state(suspend_state_t state);
 	int state;
 
+	// this is turned on if touch panel wakes up the board
+	// so make sure it's off now
+	gpio_set_value(UIB_FIERY_ON_EN, 0);
+
 	mdelay(2);	// debounce delay (really only needed for the test harness)
 	state = gpio_get_value(UIB_S3_PWR_MODE);
 
@@ -1469,6 +1473,19 @@ static void __init mx6q_sabresd_reserve(void)
 					   SZ_4K, SZ_1G);
 		memblock_remove(phys, vout_mem.res_msize);
 		vout_mem.res_mbase = phys;
+	}
+}
+
+void request_host_on(void)
+{
+	int state;
+
+	state = gpio_get_value(UIB_S3_PWR_MODE);
+	printk(KERN_ERR "request_host_on: %d", state);
+	if (state) {
+		// wake up the Fiery if it's sleeping (S3_PWR_MODE is high)
+		// this should be driven low once S3_PWR_MODE goes low
+		gpio_set_value(UIB_FIERY_ON_EN, 1);
 	}
 }
 

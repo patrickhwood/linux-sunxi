@@ -326,8 +326,10 @@ static void ssd_ts_work(struct work_struct *work)
 #ifdef CONFIG_HAS_EARLYSUSPEND
 	if (ts->suspended) {
 		extern void request_suspend_state(suspend_state_t state);
+		extern void request_host_on(void);
 
 		request_suspend_state(PM_SUSPEND_ON);
+		request_host_on();
 		input_report_key(ts->input, KEY_INFO, 1);
 		input_report_key(ts->input, KEY_INFO, 0);
 		input_sync(ts->input);
