@@ -1051,6 +1051,7 @@ static int __init s3_irq_init(void)
 	spin_lock_irq(&lock);
 	wake_lock_init(&s3_wake_lock, WAKE_LOCK_SUSPEND, "S3_PWR_MODE");
 	s3_irq(irq, (void *) s3_input);
+	enable_irq_wake(irq);
 	spin_unlock_irq(&lock);
 
 	return 0;
