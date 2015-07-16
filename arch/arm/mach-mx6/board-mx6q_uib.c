@@ -100,8 +100,10 @@
  // #define TESTS3 // allow S3 signal test on uSD boot jumper
  #ifdef TESTS3
   #define UIB_S3_PWR_MODE IMX_GPIO_NR(3, 5)		// boot_cfg jumper
+  #define get_S3_PWR_MODE() !gpio_get_value(UIB_S3_PWR_MODE)
  #else
   #define UIB_S3_PWR_MODE IMX_GPIO_NR(4, 14)		// S3 signal
+  #define get_S3_PWR_MODE() gpio_get_value(UIB_S3_PWR_MODE)
  #endif
  #define UIB_SERVER_S5 IMX_GPIO_NR(1, 0)
  #define UIB_FIERY_ON_EN IMX_GPIO_NR(4, 9)
@@ -967,6 +969,20 @@ static int __init imx6x_add_ram_console(void)
 #endif
 
 #ifdef CONFIG_MX6DL_UIB_REV_2
+
+void request_host_on(void)
+{
+	int state;
+
+	state = get_S3_PWR_MODE();
+	printk(KERN_ERR "request_host_on: %d", state);
+	if (state) {
+		// wake up the Fiery if it's sleeping (S3_PWR_MODE is high)
+		// this should be driven low once S3_PWR_MODE goes low
+		gpio_set_value(UIB_FIERY_ON_EN, 1);
+	}
+}
+
 // very basic driver for S3 signal changes
 // make suspend state change requests:
 //   sleep system when S3 transitions to 1
@@ -987,11 +1003,7 @@ static irqreturn_t s3_irq(int irq, void *handle)
 	gpio_set_value(UIB_FIERY_ON_EN, 0);
 
 	mdelay(2);	// debounce delay (really only needed for the test harness)
-	state = gpio_get_value(UIB_S3_PWR_MODE);
-
-#ifdef TESTS3
-state = !state;		// invert for pushbutton test
-#endif
+	state = get_S3_PWR_MODE();
 
 	printk("%s: state = %d\n", __func__, state);
 
@@ -1050,7 +1062,19 @@ static int __init s3_irq_init(void)
 	spin_lock_init(&lock);
 	spin_lock_irq(&lock);
 	wake_lock_init(&s3_wake_lock, WAKE_LOCK_SUSPEND, "S3_PWR_MODE");
-	s3_irq(irq, (void *) s3_input);
+
+	// S3 shouldn't normally be asserted when the board is booting, but
+	// this could happen under rare conditions (e.g., glance crashes and
+	// the watchdog timer forces a reset while the Fiery is sleeping).
+	// In this case, don't make the initial call to the S3 interrupt handler;
+	// call request_host_on() instead to wake up the Fiery and continue on
+	// with booting.  When the Fiery wakes up, s3_irq() will be called with
+	// S3_PWR_MODE deasserted, and power management can progress normally
+	// from that point on.
+	if (get_S3_PWR_MODE())
+		request_host_on();
+	else
+		s3_irq(irq, (void *) s3_input);
 	enable_irq_wake(irq);
 	spin_unlock_irq(&lock);
 
@@ -1474,19 +1498,6 @@ static void __init mx6q_sabresd_reserve(void)
 					   SZ_4K, SZ_1G);
 		memblock_remove(phys, vout_mem.res_msize);
 		vout_mem.res_mbase = phys;
-	}
-}
-
-void request_host_on(void)
-{
-	int state;
-
-	state = gpio_get_value(UIB_S3_PWR_MODE);
-	printk(KERN_ERR "request_host_on: %d", state);
-	if (state) {
-		// wake up the Fiery if it's sleeping (S3_PWR_MODE is high)
-		// this should be driven low once S3_PWR_MODE goes low
-		gpio_set_value(UIB_FIERY_ON_EN, 1);
 	}
 }
 
