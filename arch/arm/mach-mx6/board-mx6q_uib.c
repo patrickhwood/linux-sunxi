@@ -71,6 +71,7 @@
 #include <mach/mxc_asrc.h>
 #include <mach/mipi_dsi.h>
 #include <mach/mxc_ir.h>
+#include <mach/arc_otg.h>
 
 #include <asm/irq.h>
 #include <asm/setup.h>
@@ -977,9 +978,16 @@ void request_host_on(void)
 	state = get_S3_PWR_MODE();
 	printk(KERN_ERR "request_host_on: %d", state);
 	if (state) {
+#ifdef USE_FIERY_ON_EN
 		// wake up the Fiery if it's sleeping (S3_PWR_MODE is high)
 		// this should be driven low once S3_PWR_MODE goes low
 		gpio_set_value(UIB_FIERY_ON_EN, 1);
+#else
+		u32 tmp = UOG_PORTSC1;
+		printk(KERN_ERR "%s: UOG_PORTSC1 = %x\n", __func__, tmp);
+		tmp |= PORTSC_PORT_FORCE_RESUME;
+		UOG_PORTSC1 = tmp;
+#endif
 	}
 }
 
@@ -998,9 +1006,11 @@ static irqreturn_t s3_irq(int irq, void *handle)
 	extern void request_suspend_state(suspend_state_t state);
 	int state;
 
+#ifdef USE_FIERY_ON_EN
 	// this is turned on if touch panel wakes up the board
 	// so make sure it's off now
 	gpio_set_value(UIB_FIERY_ON_EN, 0);
+#endif
 
 	mdelay(2);	// debounce delay (really only needed for the test harness)
 	state = get_S3_PWR_MODE();
