@@ -103,7 +103,7 @@
   #define UIB_S3_PWR_MODE IMX_GPIO_NR(3, 5)		// boot_cfg jumper
   #define get_S3_PWR_MODE() !gpio_get_value(UIB_S3_PWR_MODE)
  #else
-  #define UIB_S3_PWR_MODE IMX_GPIO_NR(4, 14)		// S3 signal
+  // #define UIB_S3_PWR_MODE IMX_GPIO_NR(4, 14)		// disable S3 signal
   #define get_S3_PWR_MODE() gpio_get_value(UIB_S3_PWR_MODE)
  #endif
  #define UIB_SERVER_S5 IMX_GPIO_NR(1, 0)
@@ -973,9 +973,11 @@ static int __init imx6x_add_ram_console(void)
 
 void request_host_on(void)
 {
-	int state;
+	int state = 1;
 
+#ifdef UIB_S3_PWR_MODE
 	state = get_S3_PWR_MODE();
+#endif
 	printk(KERN_ERR "request_host_on: %d", state);
 	if (state) {
 #ifdef USE_FIERY_ON_EN
@@ -991,6 +993,7 @@ void request_host_on(void)
 	}
 }
 
+# ifdef UIB_S3_PWR_MODE
 // very basic driver for S3 signal changes
 // make suspend state change requests:
 //   sleep system when S3 transitions to 1
@@ -1100,6 +1103,7 @@ static void __init s3_irq_exit(void)
 
 module_init(s3_irq_init);
 module_exit(s3_irq_exit);
+# endif /* UIB_S3_PWR_MODE */
 #endif /* CONFIG_MX6DL_UIB_REV_2 */
 
 /*!
@@ -1422,9 +1426,11 @@ static void __init mx6_sabresd_board_init(void)
 	gpio_direction_input(UIB_SERVER_S5);
 	gpio_export(UIB_SERVER_S5, false);
 
+# ifdef UIB_S3_PWR_MODE
 	gpio_request(UIB_S3_PWR_MODE, "s3-pwr-mode");
 	gpio_direction_input(UIB_S3_PWR_MODE);
 	gpio_export(UIB_S3_PWR_MODE, false);
+# endif /* UIB_S3_PWR_MODE */
 #endif
 }
 
