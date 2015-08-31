@@ -142,6 +142,11 @@ static void wakeup_event_handler(struct wakeup_ctrl *ctrl)
 				if (usb_pdata->wakeup_handler) {
 					usb_pdata->wakeup_handler(usb_pdata);
 				}
+
+				{
+					extern void wakeup_android(void);
+					wakeup_android();
+				}
 			}
 		}
 	}

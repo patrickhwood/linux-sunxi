@@ -993,6 +993,15 @@ void request_host_on(void)
 	}
 }
 
+static struct input_dev *wakeup_input;
+
+void wakeup_android(void)
+{
+	input_report_key(wakeup_input, KEY_INFO, 1);
+	input_report_key(wakeup_input, KEY_INFO, 0);
+	input_sync(wakeup_input);
+}
+
 # ifdef UIB_S3_PWR_MODE
 // very basic driver for S3 signal changes
 // make suspend state change requests:
@@ -1000,7 +1009,6 @@ void request_host_on(void)
 //   wake up system when S3 transitions to 0
 //   and send INFO key events on wakeup
 
-static struct input_dev *s3_input;
 static struct wake_lock s3_wake_lock;
 
 // IRQ handler
@@ -1023,9 +1031,9 @@ static irqreturn_t s3_irq(int irq, void *handle)
 	if (!state) {
 		wake_lock(&s3_wake_lock);
 		request_suspend_state(PM_SUSPEND_ON);
-		input_report_key(s3_input, KEY_INFO, 1);
-		input_report_key(s3_input, KEY_INFO, 0);
-		input_sync(s3_input);
+		input_report_key(wakeup_input, KEY_INFO, 1);
+		input_report_key(wakeup_input, KEY_INFO, 0);
+		input_sync(wakeup_input);
 	}
 	else {
 		wake_unlock(&s3_wake_lock);
@@ -1034,40 +1042,43 @@ static irqreturn_t s3_irq(int irq, void *handle)
 
 	return IRQ_HANDLED;
 }
+# endif /* UIB_S3_PWR_MODE */
 
 // initialize device driver
 static int __init s3_irq_init(void)
 {
 	int err;
-	int irq = gpio_to_irq(UIB_S3_PWR_MODE);
+	int irq;
 	spinlock_t lock;
 
-	s3_input = input_allocate_device();
-	if (!s3_input) {
+	wakeup_input = input_allocate_device();
+	if (!wakeup_input) {
 		printk("%s: error allocating input device\n", __func__);
 		return ENOMEM;
 	}
 
-	s3_input->name = "gpio-keys";
-	s3_input->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_SYN);
-	s3_input->keybit[BIT_WORD(KEY_INFO)] = BIT_MASK(KEY_INFO);
+	wakeup_input->name = "gpio-keys";
+	wakeup_input->evbit[0] = BIT_MASK(EV_KEY) | BIT_MASK(EV_SYN);
+	wakeup_input->keybit[BIT_WORD(KEY_INFO)] = BIT_MASK(KEY_INFO);
 
-	err = input_register_device(s3_input);
+	err = input_register_device(wakeup_input);
 	if (err < 0) {
 		printk("%s: error registering irq %d\n", __func__, err);
-		input_free_device(s3_input);
+		input_free_device(wakeup_input);
 		return err;
 	}
 
+# ifdef UIB_S3_PWR_MODE
+	irq = gpio_to_irq(UIB_S3_PWR_MODE);
 	err = request_irq(irq, s3_irq,
 		IRQF_TRIGGER_RISING |
 		IRQF_TRIGGER_FALLING |
 		IRQF_NO_SUSPEND |
 		IRQF_EARLY_RESUME,
-		"S3_PWR_MODE", (void *) s3_input);
+		"S3_PWR_MODE", (void *) wakeup_input);
 	if (err < 0) {
 		printk("%s: error requesting irq %d\n", __func__, irq);
-		input_free_device(s3_input);
+		input_free_device(wakeup_input);
 		return err;
 	}
 	printk("%s: s3_irq set on %d\n", __func__, irq);
@@ -1087,23 +1098,25 @@ static int __init s3_irq_init(void)
 	if (get_S3_PWR_MODE())
 		request_host_on();
 	else
-		s3_irq(irq, (void *) s3_input);
+		s3_irq(irq, (void *) wakeup_input);
 	enable_irq_wake(irq);
 	spin_unlock_irq(&lock);
+# endif /* UIB_S3_PWR_MODE */
 
 	return 0;
 }
 
 static void __init s3_irq_exit(void)
 {
+# ifdef UIB_S3_PWR_MODE
 	free_irq(gpio_to_irq(UIB_S3_PWR_MODE), s3_irq);
-	input_unregister_device(s3_input);
+	input_unregister_device(wakeup_input);
 	wake_lock_destroy(&s3_wake_lock);
+# endif /* UIB_S3_PWR_MODE */
 }
 
 module_init(s3_irq_init);
 module_exit(s3_irq_exit);
-# endif /* UIB_S3_PWR_MODE */
 #endif /* CONFIG_MX6DL_UIB_REV_2 */
 
 /*!
