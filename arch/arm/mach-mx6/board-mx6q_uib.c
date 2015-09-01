@@ -111,9 +111,6 @@
 #endif // CONFIG_MX6DL_UIB_REV_1
 
 #define UIB_LED0	IMX_GPIO_NR(1, 2)
-#define UIB_LED1	IMX_GPIO_NR(1, 5)
-#define UIB_LED2	IMX_GPIO_NR(1, 7)
-#define UIB_LED3	IMX_GPIO_NR(1, 8)
 
 #define UIB_TOUCH_IRQ    IMX_GPIO_NR(3, 23)
 #define UIB_TOUCH_RESET  IMX_GPIO_NR(3, 24)
@@ -747,10 +744,7 @@ static void gps_power_on(bool on)
 
 static struct gpio_led imx6q_gpio_leds[] = {
 	/* set 4th argument to 1 to keep LED on during suspend */
-	GPIO_LED(UIB_LED0, "led0", 0, 0, ""),
-	GPIO_LED(UIB_LED1, "led1", 0, 0, ""),
-	GPIO_LED(UIB_LED2, "led2", 0, 0, ""),
-	GPIO_LED(UIB_LED3, "led3", 0, 0, ""),
+	GPIO_LED(UIB_LED0, "led0", 0, 1, ""),
 };
 
 static struct gpio_led_platform_data imx6q_gpio_leds_data = {

@@ -116,12 +116,6 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 
 	/* LED0 */
 	MX6DL_PAD_GPIO_2__GPIO_1_2,
-	/* LED1 */
-	MX6DL_PAD_GPIO_5__GPIO_1_5,
-	/* LED2 */
-	MX6DL_PAD_GPIO_7__GPIO_1_7,
-	/* LED3 */
-	MX6DL_PAD_GPIO_8__GPIO_1_8,
 
 	/* DISP_PWM */
 	MX6DL_PAD_GPIO_9__PWM1_PWMO,
