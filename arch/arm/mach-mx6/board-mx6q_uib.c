@@ -103,7 +103,7 @@
   #define UIB_S3_PWR_MODE IMX_GPIO_NR(3, 5)		// boot_cfg jumper
   #define get_S3_PWR_MODE() !gpio_get_value(UIB_S3_PWR_MODE)
  #else
-  // #define UIB_S3_PWR_MODE IMX_GPIO_NR(4, 14)		// disable S3 signal
+  #define UIB_S3_PWR_MODE IMX_GPIO_NR(4, 14)
   #define get_S3_PWR_MODE() gpio_get_value(UIB_S3_PWR_MODE)
  #endif
  #define UIB_SERVER_S5 IMX_GPIO_NR(1, 0)
