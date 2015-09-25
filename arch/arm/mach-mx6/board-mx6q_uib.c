@@ -1109,7 +1109,7 @@ static void __init s3_irq_exit(void)
 # endif /* UIB_S3_PWR_MODE */
 }
 
-module_init(s3_irq_init);
+late_initcall(s3_irq_init);
 module_exit(s3_irq_exit);
 #endif /* CONFIG_MX6DL_UIB_REV_2 */
 
