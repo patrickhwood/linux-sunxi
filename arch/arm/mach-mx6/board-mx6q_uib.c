@@ -92,7 +92,7 @@
 #ifdef CONFIG_MX6DL_UIB_REV_1
  #define UIB_LCD_CNTRL_VGH	IMX_GPIO_NR(2, 10)
 #else
- #define UIB_LCD_PWR_EN IMX_GPIO_NR(3, 20)
+ #define UIB_LCD_PWR_INH IMX_GPIO_NR(3, 20)
  #define UIB_LCD_STBYB IMX_GPIO_NR(3, 25)
  #define UIB_LCD_RESET IMX_GPIO_NR(3, 27)
 
@@ -177,6 +177,8 @@ extern char *gp_reg_id;
 extern char *soc_reg_id;
 extern char *pu_reg_id;
 extern int epdc_enabled;
+
+static int board_version = 1;
 
 /* eMMC */
 static const struct esdhc_platform_data mx6q_sabresd_emmc_data __initconst = {
@@ -639,7 +641,7 @@ static void sabresd_suspend_enter(void)
 	/* disable LCD */
 	gpio_set_value(UIB_LVDS_EN, 0);
 #ifdef CONFIG_MX6DL_UIB_REV_2
-	gpio_set_value(UIB_LCD_PWR_EN, 0);
+	gpio_set_value(UIB_LCD_PWR_INH, board_version == 1 ? 0 : 1);
 	gpio_set_value(UIB_LCD_STBYB, 0);
 #endif
 }
@@ -653,7 +655,7 @@ static void sabresd_suspend_exit(void)
 	/* enable LCD */
 	gpio_set_value(UIB_LVDS_EN, 1);
 #ifdef CONFIG_MX6DL_UIB_REV_2
-	gpio_set_value(UIB_LCD_PWR_EN, 1);
+	gpio_set_value(UIB_LCD_PWR_INH, board_version == 1 ? 1 : 0);
 	gpio_set_value(UIB_LCD_STBYB, 1);
 	/* reset LCD */
 	gpio_set_value(UIB_LCD_RESET, 0);
@@ -965,6 +967,17 @@ static int __init imx6x_add_ram_console(void)
 
 #ifdef CONFIG_MX6DL_UIB_REV_2
 
+static int __init board_version_setup(char *version)
+{
+	char *endp;
+
+	board_version = version ? simple_strtoul(version, &endp, 0) : 1;
+	printk(KERN_ERR "board_version: %d\n", board_version);
+
+	return 0;
+}
+early_param("board_version", board_version_setup);
+
 void request_host_on(void)
 {
 	int state = 1;
@@ -972,7 +985,7 @@ void request_host_on(void)
 #ifdef UIB_S3_PWR_MODE
 	state = get_S3_PWR_MODE();
 #endif
-	printk(KERN_ERR "request_host_on: %d", state);
+	printk(KERN_ERR "request_host_on: %d\n", state);
 	if (state) {
 #ifdef USE_FIERY_ON_EN
 		// wake up the Fiery if it's sleeping (S3_PWR_MODE is high)
@@ -1153,8 +1166,8 @@ static void __init mx6_sabresd_board_init(void)
 	gpio_request(UIB_LCD_CNTRL_VGH, "LCD_CNTRL_VGH");
 	gpio_direction_output(UIB_LCD_CNTRL_VGH, 1);
 #else
-	gpio_request(UIB_LCD_PWR_EN, "LCD_PWR_EN");
-	gpio_direction_output(UIB_LCD_PWR_EN, 1);
+	gpio_request(UIB_LCD_PWR_INH, "LCD_PWR_EN");
+	gpio_direction_output(UIB_LCD_PWR_INH, board_version == 1 ? 1 : 0);
 	gpio_request(UIB_LCD_STBYB, "LCD_STBYB");
 	gpio_direction_output(UIB_LCD_STBYB, 1);
 	gpio_request(UIB_LCD_RESET, "LCD_RESET");
