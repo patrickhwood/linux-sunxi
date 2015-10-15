@@ -13,9 +13,6 @@
 #include <linux/delay.h>
 #include <linux/gpio.h>
 #include <linux/slab.h>
-#ifdef CONFIG_HAS_EARLYSUSPEND
-# include <linux/earlysuspend.h>
-#endif
 #include <mach/hardware.h>
 
 #define DEVICE_ADDR        0x40
@@ -28,9 +25,6 @@
 struct uib_hub_priv {
 	struct i2c_client	*client;
 	spinlock_t			lock;
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	struct early_suspend early_suspend;
-#endif 
 };
 
 static int hub_i2c_transfer(struct i2c_client *client, struct i2c_msg *msgs, int cnt)
@@ -97,25 +91,11 @@ static int hub_i2c_write(struct i2c_client *client, uint8_t reg, uint8_t data)
 	return ret;
 }
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-static void uibhub_late_resume(struct early_suspend *early_s)
+#ifdef CONFIG_PM
+static int uibhub_pm_suspend(struct device *dev)
 {
-	struct uib_hub_priv *hub = container_of(early_s, struct uib_hub_priv, early_suspend);
-	unsigned char status = 0xff;
-
-	// clear cfgActive bit in status register to resume operation
-	// after reset
-	if (hub_i2c_write(hub->client, STATUS_REG, 0x01) < 0) {
-	        dev_err(&hub->client->dev, "%s: error clearing status reg\n", __func__);
-	}
-
-	hub_i2c_read(hub->client, STATUS_REG, &status);
-	dev_info(&hub->client->dev, "%s: status = %x\n", __func__, status);
-}
-static void uibhub_early_suspend(struct early_suspend *early_s)
-{
-	struct uib_hub_priv *hub = container_of(early_s, struct uib_hub_priv, early_suspend);
-	unsigned int *HUB_gpios = (unsigned int *) hub->client->dev.platform_data;
+	struct i2c_client   *client = to_i2c_client(dev);
+	unsigned int *HUB_gpios = (unsigned int *) client->dev.platform_data;
 	unsigned char status = 0xff;
 
 	// reset hub to put into lower power mode
@@ -124,10 +104,34 @@ static void uibhub_early_suspend(struct early_suspend *early_s)
 	gpio_set_value(HUB_gpios[0], 1);
 	mdelay(5);
 
-	hub_i2c_read(hub->client, STATUS_REG, &status);
-	dev_info(&hub->client->dev, "%s: status = %x\n", __func__, status);
+	hub_i2c_read(client, STATUS_REG, &status);
+	dev_info(&client->dev, "%s: status = %x\n", __func__, status);
+
+    return 0;
 }
-#endif /* CONFIG_HAS_EARLYSUSPEND */
+
+static int uibhub_pm_resume(struct device *dev)
+{
+	struct i2c_client   *client = to_i2c_client(dev);
+	unsigned char status = 0xff;
+
+	// clear cfgActive bit in status register to resume operation
+	// after reset
+	if (hub_i2c_write(client, STATUS_REG, 0x01) < 0) {
+	        dev_err(&client->dev, "%s: error clearing status reg\n", __func__);
+	}
+
+	hub_i2c_read(client, STATUS_REG, &status);
+	dev_info(&client->dev, "%s: status = %x\n", __func__, status);
+
+    return 0;
+}
+
+static const struct dev_pm_ops uibhub_pm_ops = {
+    .suspend    = uibhub_pm_suspend,
+    .resume     = uibhub_pm_resume,
+};
+#endif /* CONFIG_PM */
 
 static int uibhub_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
@@ -208,13 +212,7 @@ static int uibhub_probe(struct i2c_client *client,
 		"%s: registered hub: VID = %02x%02x, PID = %02x%02x, status = %x\n",
 		__func__, buf[1], buf[0], buf[3], buf[2], status);
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
 	gpio_direction_output(HUB_gpios[0], 1);
-	hub->early_suspend.suspend = uibhub_early_suspend;
-	hub->early_suspend.resume  = uibhub_late_resume;
-	hub->early_suspend.level   = EARLY_SUSPEND_LEVEL_BLANK_SCREEN-2;
-	register_early_suspend(&hub->early_suspend);
-#endif
 
 	return 0;
 
@@ -243,7 +241,11 @@ MODULE_DEVICE_TABLE(i2c, uibhub_idtable);
 static struct i2c_driver uibhub_driver = {
 	.driver = {
 		.owner	= THIS_MODULE,
-		.name	= "uibhub"
+		.name	= "uibhub",
+#ifdef CONFIG_PM
+		.pm = &uibhub_pm_ops,
+#endif
+
 	},
 	.id_table	= uibhub_idtable,
 	.probe		= uibhub_probe,
