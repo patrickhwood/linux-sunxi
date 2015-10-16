@@ -1043,6 +1043,14 @@ static irqreturn_t s3_irq(int irq, void *handle)
 		input_sync(wakeup_input);
 	}
 	else {
+#ifdef CONFIG_MX6DL_UIB_REV_2
+		// reset hub to put into lower power mode
+		gpio_set_value(UIB_USB_HUB_RESET, 0);
+		mdelay(5);
+		gpio_set_value(UIB_USB_HUB_RESET, 1);
+		mdelay(5);
+#endif
+
 		wake_unlock(&s3_wake_lock);
 		request_suspend_state(PM_SUSPEND_MEM);
 	}

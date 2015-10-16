@@ -95,14 +95,16 @@ static int hub_i2c_write(struct i2c_client *client, uint8_t reg, uint8_t data)
 static int uibhub_pm_suspend(struct device *dev)
 {
 	struct i2c_client   *client = to_i2c_client(dev);
-	unsigned int *HUB_gpios = (unsigned int *) client->dev.platform_data;
 	unsigned char status = 0xff;
+/*
+	unsigned int *HUB_gpios = (unsigned int *) client->dev.platform_data;
 
 	// reset hub to put into lower power mode
 	gpio_set_value(HUB_gpios[0], 0);
 	mdelay(5);
 	gpio_set_value(HUB_gpios[0], 1);
 	mdelay(5);
+*/
 
 	hub_i2c_read(client, STATUS_REG, &status);
 	dev_info(&client->dev, "%s: status = %x\n", __func__, status);
