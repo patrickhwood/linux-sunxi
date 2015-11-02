@@ -180,6 +180,12 @@ static const struct attribute_group pwm_generic_sysfs_files = {
 	.attrs	= pwm_generic_attrs,
 };
 
+static const struct attribute_group *pwm_generic_sysfs_attr_groups[] = {
+    &pwm_generic_sysfs_files,
+    NULL
+};
+
+
 static int __init pwm_generic_probe(struct platform_device *pdev)
 {
 	struct platform_pwm_generic_data *data = pdev->dev.platform_data;
@@ -195,12 +201,6 @@ static int __init pwm_generic_probe(struct platform_device *pdev)
 	if (!pwm) {
 		err = -ENOMEM;
 		return err;
-	}
-
-	err = sysfs_create_group(&pdev->dev.kobj, &pwm_generic_sysfs_files);
-	if (err) {
-		dev_err(&pdev->dev, "unable to create sysfs group for generic pwm, id = %d\n", data->pwm_id);
-		goto fail_no_sysfs;
 	}
 
 /*
@@ -294,6 +294,7 @@ static struct platform_driver pwm_generic_driver = {
 	.driver		= {
 		.name	= "pwm-generic",
 		.owner	= THIS_MODULE,
+		.groups	= pwm_generic_sysfs_attr_groups,
 	},
 	.probe		= pwm_generic_probe,
 	.remove		= pwm_generic_remove,
