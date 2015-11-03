@@ -236,9 +236,8 @@ static int __init pwm_generic_probe(struct platform_device *pdev)
 
 fail_err_pwm:
 	// clk_put(pwm->clk);
-fail_no_clk:
+// fail_no_clk:
 	sysfs_remove_group(&pdev->dev.kobj, &pwm_generic_sysfs_files);
-fail_no_sysfs:
 	kfree(pwm);
 	return err;
 }
