@@ -56,12 +56,14 @@
 static unsigned int min_area = 1;
 static unsigned int min_level = 0x80;
 static unsigned int min_weight = 1;
-static unsigned int update = 0;
 
-module_param(min_area, uint, S_IRUGO | S_IWUSR);
-module_param(min_level, uint, S_IRUGO | S_IWUSR);
-module_param(min_weight, uint, S_IRUGO | S_IWUSR);
-module_param(update, uint, S_IWUSR);
+static unsigned int update = 0;
+static unsigned int disable = 0;
+
+module_param(min_area, uint, S_IRUGO);
+module_param(min_level, uint, S_IRUGO);
+module_param(min_weight, uint, S_IRUGO);
+module_param(disable, uint, S_IRUGO);
 
 struct ChipSetting
 {
@@ -358,6 +360,10 @@ static void ssd_ts_work(struct work_struct *work)
 			{
 				return;
 			}
+
+			if(disable)
+				continue;
+
 			xpos = ((buf[2] & 0xf0) << 4) | buf[0];
 			ypos = ((buf[2] & 0x0f) << 8) | buf[1];
 			width = buf[3];
@@ -438,7 +444,6 @@ static void ssd_ts_work(struct work_struct *work)
 #ifdef SSD_POLL
 	hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_PERIOD), HRTIMER_MODE_REL);
 #endif
-
 	if(update) {
 		update = 0;
 		ssd_tp_init(ts);
@@ -508,6 +513,111 @@ static void ssd2543_ts_early_suspend(struct early_suspend *early_s)
 	enable_irq_wake(ts->irq);
 }
 #endif /* CONFIG_HAS_EARLYSUSPEND */
+
+/*
+ * /sys/bus/i2c/drivers/ssd2543
+ *   /min_area     read-write minimum touch area
+ *   /min_level    read-write maximum touch sensitivity level
+ *   /min_weight   read-write minimum touch weight
+ *   /disable      read-write disable touch panel
+ */
+
+static ssize_t ssd2543_get_min_area(struct device_driver *dev, char *buf)
+{
+	return sprintf(buf, "%u\n", min_area);
+}
+
+static ssize_t ssd2543_get_min_level(struct device_driver *dev, char *buf)
+{
+	return sprintf(buf, "%u\n", min_level);
+}
+
+static ssize_t ssd2543_get_min_weight(struct device_driver *dev, char *buf)
+{
+	return sprintf(buf, "%u\n", min_weight);
+}
+
+static ssize_t ssd2543_get_disable(struct device_driver *dev, char *buf)
+{
+	return sprintf(buf, "%u\n", disable);
+}
+
+static ssize_t ssd2543_set_min_area(struct device_driver *dev, const char *buf, size_t count)
+{
+	long area;
+	int err;
+
+	err = strict_strtol(buf, 10, &area);
+	if (err || area < 1)
+		return -EINVAL;
+	min_area = (unsigned int) area;
+	update++;
+
+	return count;
+}
+
+static ssize_t ssd2543_set_min_level(struct device_driver *dev, const char *buf, size_t count)
+{
+	long level;
+	int err;
+
+	err = strict_strtol(buf, 10, &level);
+	if (err || level < 1)
+		return -EINVAL;
+	min_level = (unsigned int) level;
+	update++;
+
+	return count;
+}
+
+static ssize_t ssd2543_set_min_weight(struct device_driver *dev, const char *buf, size_t count)
+{
+	long weight;
+	int err;
+
+	err = strict_strtol(buf, 10, &weight);
+	if (err || weight < 1)
+		return -EINVAL;
+	min_weight = (unsigned int) weight;
+	update++;
+
+	return count;
+}
+
+static ssize_t ssd2543_set_disable(struct device_driver *dev, const char *buf, size_t count)
+{
+	long dis;
+	int err;
+
+	err = strict_strtol(buf, 10, &dis);
+	if (err || dis < 0)
+		return -EINVAL;
+	disable = (unsigned int) dis;
+
+	return count;
+}
+
+static DRIVER_ATTR(min_area, S_IWUSR | S_IRUGO, ssd2543_get_min_area, ssd2543_set_min_area);
+static DRIVER_ATTR(min_level, S_IWUSR | S_IRUGO, ssd2543_get_min_level, ssd2543_set_min_level);
+static DRIVER_ATTR(min_weight, S_IWUSR | S_IRUGO, ssd2543_get_min_weight, ssd2543_set_min_weight);
+static DRIVER_ATTR(disable, S_IWUSR | S_IRUGO, ssd2543_get_disable, ssd2543_set_disable);
+
+static struct attribute *ssd2543_attrs[] = {
+	&driver_attr_min_area.attr,
+	&driver_attr_min_level.attr,
+	&driver_attr_min_weight.attr,
+	&driver_attr_disable.attr,
+	NULL
+};
+
+static const struct attribute_group ssd2543_sysfs_files = {
+	.attrs	= ssd2543_attrs,
+};
+
+static const struct attribute_group *ssd2543_sysfs_attr_groups[] = {
+    &ssd2543_sysfs_files,
+    NULL
+};
 
 static int ssd2543_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
@@ -669,6 +779,7 @@ MODULE_DEVICE_TABLE(i2c, ssd2543_idtable);
 static struct i2c_driver ssd2543_driver = {
 	.driver = {
 		.owner	= THIS_MODULE,
+		.groups	= ssd2543_sysfs_attr_groups,
 		.name	= "ssd2543"
 	},
 	.id_table	= ssd2543_idtable,
