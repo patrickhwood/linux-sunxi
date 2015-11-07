@@ -49,6 +49,7 @@
 #include <linux/ion.h>
 #include <linux/module.h>
 #include <linux/suspend.h>
+#include <linux/timer.h>
 #include <linux/wakelock.h>
 #include <linux/power/sabresd_battery.h>
 #include <linux/regulator/anatop-regulator.h>
@@ -87,6 +88,7 @@
 #include "board-mx6dl_uib.h"
 #include <mach/imx_rfkill.h>
 
+#include <../drivers/leds/leds.h>
 
 #define UIB_LVDS_EN			IMX_GPIO_NR(7, 12)
 #ifdef CONFIG_MX6DL_UIB_REV_1
@@ -639,10 +641,10 @@ static void sabresd_suspend_enter(void)
 	gpio_set_value(UIB_RFID_EN, 0);
 
 	/* disable LCD */
-	gpio_set_value(UIB_LVDS_EN, 0);
+	// gpio_set_value(UIB_LVDS_EN, 0);
 #ifdef CONFIG_MX6DL_UIB_REV_2
-	gpio_set_value(UIB_LCD_PWR_INH, board_version == 1 ? 0 : 1);
-	gpio_set_value(UIB_LCD_STBYB, 0);
+	// gpio_set_value(UIB_LCD_PWR_INH, board_version == 1 ? 0 : 1);
+	// gpio_set_value(UIB_LCD_STBYB, 0);
 #endif
 }
 
@@ -816,6 +818,8 @@ static struct platform_pwm_backlight_data mx6_sabresd_pwm_backlight_data = {
 	.dft_brightness = 128,
 	.pwm_period_ns = 50000,
 };
+
+static struct platform_device *platform_backlight_device;
 
 #ifdef CONFIG_MX6DL_UIB_REV_1
 static struct platform_pwm_generic_data mx6_sabresd_pwm_speaker = {
@@ -1017,12 +1021,31 @@ void wakeup_android(void)
 //   and send INFO key events on wakeup
 
 static struct wake_lock s3_wake_lock;
+static struct timer_list s3_timer;
+
+static int s3irq;
+
+struct led_classdev *led0_cdev;
+
+static void s3_timer_callback(unsigned long data)
+{
+	extern void request_suspend_state(suspend_state_t state);
+
+	printk("s3_timer_callback called (%lu).\n", jiffies);
+	enable_irq(s3irq);
+	if(led0_cdev)
+		led_set_brightness(led0_cdev, LED_OFF);
+
+	wake_unlock(&s3_wake_lock);
+	request_suspend_state(PM_SUSPEND_MEM);
+}
 
 // IRQ handler
 static irqreturn_t s3_irq(int irq, void *handle)
 {
 	extern void request_suspend_state(suspend_state_t state);
 	int state;
+	int ret;
 
 #ifdef USE_FIERY_ON_EN
 	// this is turned on if touch panel wakes up the board
@@ -1030,7 +1053,6 @@ static irqreturn_t s3_irq(int irq, void *handle)
 	gpio_set_value(UIB_FIERY_ON_EN, 0);
 #endif
 
-	mdelay(2);	// debounce delay (really only needed for the test harness)
 	state = get_S3_PWR_MODE();
 
 	printk("%s: state = %d\n", __func__, state);
@@ -1044,6 +1066,23 @@ static irqreturn_t s3_irq(int irq, void *handle)
 	}
 	else {
 #ifdef CONFIG_MX6DL_UIB_REV_2
+#if 0 // can't be called from an interrupt context
+		// turn up LCD panel's backlight to drain power supply in S3
+		if (platform_backlight_device) {
+			struct backlight_device *bd = platform_get_drvdata(platform_backlight_device);
+			if (bd && bd->ops) printk(KERN_ERR "backlight ops->update_status = %x\n", bd->ops->update_status);
+			if (bd && bd->ops && bd->ops->update_status) {
+				bd->props.brightness = bd->props.max_brightness;
+				bd->ops->update_status(bd);
+			}
+		}
+#endif
+
+		// this drives S3 high to prevent fluctuations while the power
+		// supply voltage is dropping; it's driven low when the timer triggers
+		if(led0_cdev)
+			led_set_brightness(led0_cdev, LED_FULL);
+
 		// reset hub to put into lower power mode
 		gpio_set_value(UIB_USB_HUB_RESET, 0);
 		mdelay(5);
@@ -1051,19 +1090,39 @@ static irqreturn_t s3_irq(int irq, void *handle)
 		mdelay(5);
 #endif
 
-		wake_unlock(&s3_wake_lock);
-		request_suspend_state(PM_SUSPEND_MEM);
+		setup_timer(&s3_timer, s3_timer_callback, 0);
+
+		printk("setting timer to fire in 3000ms (%lu)\n", jiffies);
+		ret = mod_timer(&s3_timer, jiffies + msecs_to_jiffies(3000));
+		if (ret)
+			printk("Error in mod_timer\n");
+		else {
+			// re-enabled in the timer callback
+			disable_irq_nosync(s3irq);
+		}
 	}
 
 	return IRQ_HANDLED;
 }
 # endif /* UIB_S3_PWR_MODE */
 
+static int leddev_check(struct device *dev, void *name)
+{
+	struct led_classdev *cdev = dev_get_drvdata(dev);
+
+	if (!cdev)
+		return 0;
+
+	printk("led0 classdev name = %s\n", cdev->name);
+	return !strcmp(name, cdev->name);
+}
+
 // initialize device driver
 static int __init s3_irq_init(void)
 {
 	int err;
 	int irq;
+	struct device *dev;
 	spinlock_t lock;
 
 	wakeup_input = input_allocate_device();
@@ -1084,6 +1143,14 @@ static int __init s3_irq_init(void)
 	}
 
 # ifdef UIB_S3_PWR_MODE
+	dev = bus_find_device_by_name(&platform_bus_type, NULL, "leds-gpio");
+	dev = device_find_child(dev, "led0", leddev_check);
+	if(dev) {
+		led0_cdev = dev_get_drvdata(dev);
+		if (led0_cdev)
+			printk("led0 cdev name = %s\n", led0_cdev->name);
+	}
+
 	irq = gpio_to_irq(UIB_S3_PWR_MODE);
 	err = request_irq(irq, s3_irq,
 		IRQF_TRIGGER_RISING |
@@ -1338,7 +1405,7 @@ static void __init mx6_sabresd_board_init(void)
 	imx6q_add_mxc_pwm(1);
 	imx6q_add_mxc_pwm(2);
 	imx6q_add_mxc_pwm(3);
-	imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
+	platform_backlight_device = imx6q_add_mxc_pwm_backlight(0, &mx6_sabresd_pwm_backlight_data);
 #ifdef CONFIG_MX6DL_UIB_REV_1
 	platform_device_register_resndata(NULL, "pwm-generic", 2, NULL, 0,
 		&mx6_sabresd_pwm_speaker, sizeof(mx6_sabresd_pwm_speaker));

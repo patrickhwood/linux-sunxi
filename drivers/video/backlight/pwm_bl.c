@@ -40,6 +40,7 @@ static int pwm_backlight_update_status(struct backlight_device *bl)
 	int brightness = bl->props.brightness;
 	int max = bl->props.max_brightness;
 
+/* don't blank the backlight so we can drain the power supply in S3 mode
 	if (bl->props.power != FB_BLANK_UNBLANK)
 		brightness = 0;
 
@@ -48,6 +49,7 @@ static int pwm_backlight_update_status(struct backlight_device *bl)
 
 	if (pb->notify)
 		brightness = pb->notify(pb->dev, brightness);
+*/
 
 	if (brightness == 0) {
 		pwm_config(pb->pwm, 0, pb->period);
