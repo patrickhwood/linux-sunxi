@@ -57,13 +57,15 @@ static unsigned int min_area = 1;
 static unsigned int min_level = 0x80;
 static unsigned int min_weight = 1;
 
-static unsigned int update = 0;
 static unsigned int disable = 0;
 
 module_param(min_area, uint, S_IRUGO);
 module_param(min_level, uint, S_IRUGO);
 module_param(min_weight, uint, S_IRUGO);
 module_param(disable, uint, S_IRUGO);
+
+// keep most recent instance of SSD touchpanel I2C client device around
+static struct i2c_client *ssd_i2c_client;
 
 struct ChipSetting
 {
@@ -444,10 +446,6 @@ static void ssd_ts_work(struct work_struct *work)
 #ifdef SSD_POLL
 	hrtimer_start(&ts->timer, ktime_set(0, TS_POLL_PERIOD), HRTIMER_MODE_REL);
 #endif
-	if(update) {
-		update = 0;
-		ssd_tp_init(ts);
-	}
 
 	return;
 }
@@ -551,7 +549,12 @@ static ssize_t ssd2543_set_min_area(struct device_driver *dev, const char *buf, 
 	if (err || area < 1)
 		return -EINVAL;
 	min_area = (unsigned int) area;
-	update++;
+
+	if (ssd_i2c_client) {
+		// perform an update if user changes setting via sysfs
+		struct ssl_ts_priv *ts = i2c_get_clientdata(ssd_i2c_client);
+		ssd_tp_init(ts);
+	}
 
 	return count;
 }
@@ -565,7 +568,12 @@ static ssize_t ssd2543_set_min_level(struct device_driver *dev, const char *buf,
 	if (err || level < 1)
 		return -EINVAL;
 	min_level = (unsigned int) level;
-	update++;
+
+	if (ssd_i2c_client) {
+		// perform an update if user changes setting via sysfs
+		struct ssl_ts_priv *ts = i2c_get_clientdata(ssd_i2c_client);
+		ssd_tp_init(ts);
+	}
 
 	return count;
 }
@@ -579,7 +587,12 @@ static ssize_t ssd2543_set_min_weight(struct device_driver *dev, const char *buf
 	if (err || weight < 1)
 		return -EINVAL;
 	min_weight = (unsigned int) weight;
-	update++;
+
+	if (ssd_i2c_client) {
+		// perform an update if user changes setting via sysfs
+		struct ssl_ts_priv *ts = i2c_get_clientdata(ssd_i2c_client);
+		ssd_tp_init(ts);
+	}
 
 	return count;
 }
@@ -629,6 +642,7 @@ static int ssd2543_probe(struct i2c_client *client,
 	unsigned int *SSD_gpios = (unsigned int *) client->dev.platform_data;
 
 	dev_err(&client->dev, "%s:\n",__func__);
+	ssd_i2c_client = NULL;
  
 	/* reset the SSD chip */
 	gpio_direction_output(SSD_gpios[0], 1);
@@ -732,6 +746,8 @@ static int ssd2543_probe(struct i2c_client *client,
 	ts->early_suspend.level   = EARLY_SUSPEND_LEVEL_BLANK_SCREEN-2;
 	register_early_suspend(&ts->early_suspend);
 #endif
+
+	ssd_i2c_client = client;
 
 	return 0;
 
