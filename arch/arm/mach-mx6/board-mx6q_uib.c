@@ -49,7 +49,8 @@
 #include <linux/ion.h>
 #include <linux/module.h>
 #include <linux/suspend.h>
-#include <linux/timer.h>
+#include <linux/ktime.h>
+#include <linux/android_alarm.h>
 #include <linux/wakelock.h>
 #include <linux/power/sabresd_battery.h>
 #include <linux/regulator/anatop-regulator.h>
@@ -1021,23 +1022,38 @@ void wakeup_android(void)
 //   and send INFO key events on wakeup
 
 static struct wake_lock s3_wake_lock;
-static struct timer_list s3_timer;
+static struct alarm s3_timer;
 
 static int s3irq;
 
+static uint s3_timeout = 10000;
+module_param(s3_timeout, uint, S_IRUGO | S_IWUSR);
+
 struct led_classdev *led0_cdev;
 
-static void s3_timer_callback(unsigned long data)
+static void s3_work(struct work_struct *dummy)
+{
+	// turn up LCD panel's backlight to drain power supply in S3
+	if (platform_backlight_device) {
+		struct backlight_device *bd = platform_get_drvdata(platform_backlight_device);
+		if (bd && bd->ops) printk(KERN_ERR "backlight ops->update_status = %x\n", bd->ops->update_status);
+		if (bd && bd->ops && bd->ops->update_status) {
+			bd->props.brightness = bd->props.max_brightness;
+			bd->ops->update_status(bd);
+		}
+	}
+}
+
+static DECLARE_WORK(s3_work_struct, s3_work);
+
+static void s3_timer_callback(struct alarm *alarm)
 {
 	extern void request_suspend_state(suspend_state_t state);
 
-	printk("s3_timer_callback called (%lu).\n", jiffies);
+	printk("s3_timer_callback called\n");
 	enable_irq(s3irq);
 	if(led0_cdev)
 		led_set_brightness(led0_cdev, LED_OFF);
-
-	wake_unlock(&s3_wake_lock);
-	request_suspend_state(PM_SUSPEND_MEM);
 }
 
 // IRQ handler
@@ -1045,7 +1061,7 @@ static irqreturn_t s3_irq(int irq, void *handle)
 {
 	extern void request_suspend_state(suspend_state_t state);
 	int state;
-	int ret;
+	ktime_t alarmtime;
 
 #ifdef USE_FIERY_ON_EN
 	// this is turned on if touch panel wakes up the board
@@ -1066,18 +1082,7 @@ static irqreturn_t s3_irq(int irq, void *handle)
 	}
 	else {
 #ifdef CONFIG_MX6DL_UIB_REV_2
-#if 0 // can't be called from an interrupt context
-		// turn up LCD panel's backlight to drain power supply in S3
-		if (platform_backlight_device) {
-			struct backlight_device *bd = platform_get_drvdata(platform_backlight_device);
-			if (bd && bd->ops) printk(KERN_ERR "backlight ops->update_status = %x\n", bd->ops->update_status);
-			if (bd && bd->ops && bd->ops->update_status) {
-				bd->props.brightness = bd->props.max_brightness;
-				bd->ops->update_status(bd);
-			}
-		}
-#endif
-
+		schedule_work(&s3_work_struct);
 		// this drives S3 high to prevent fluctuations while the power
 		// supply voltage is dropping; it's driven low when the timer triggers
 		if(led0_cdev)
@@ -1089,17 +1094,17 @@ static irqreturn_t s3_irq(int irq, void *handle)
 		gpio_set_value(UIB_USB_HUB_RESET, 1);
 		mdelay(5);
 #endif
+		alarm_init(&s3_timer, ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP, s3_timer_callback);
 
-		setup_timer(&s3_timer, s3_timer_callback, 0);
+		alarmtime = ktime_add_ns(alarm_get_elapsed_realtime(), (u64) s3_timeout * 1000 * 1000);
+		printk("setting timer to fire in %ums\n", s3_timeout);
+		alarm_start_range(&s3_timer, alarmtime, alarmtime);
 
-		printk("setting timer to fire in 3000ms (%lu)\n", jiffies);
-		ret = mod_timer(&s3_timer, jiffies + msecs_to_jiffies(3000));
-		if (ret)
-			printk("Error in mod_timer\n");
-		else {
-			// re-enabled in the timer callback
-			disable_irq_nosync(s3irq);
-		}
+		// re-enabled in the timer callback
+		disable_irq_nosync(s3irq);
+
+		wake_unlock(&s3_wake_lock);
+		request_suspend_state(PM_SUSPEND_MEM);
 	}
 
 	return IRQ_HANDLED;
