@@ -1026,7 +1026,7 @@ static struct alarm s3_timer;
 
 static int s3irq;
 
-static uint s3_timeout = 10000;
+static uint s3_timeout = 1000;
 module_param(s3_timeout, uint, S_IRUGO | S_IWUSR);
 
 struct led_classdev *led0_cdev;
@@ -1036,7 +1036,6 @@ static void s3_work(struct work_struct *dummy)
 	// turn up LCD panel's backlight to drain power supply in S3
 	if (platform_backlight_device) {
 		struct backlight_device *bd = platform_get_drvdata(platform_backlight_device);
-		if (bd && bd->ops) printk(KERN_ERR "backlight ops->update_status = %x\n", bd->ops->update_status);
 		if (bd && bd->ops && bd->ops->update_status) {
 			bd->props.brightness = bd->props.max_brightness;
 			bd->ops->update_status(bd);
