@@ -102,6 +102,7 @@ static void uibhub_late_resume(struct early_suspend *early_s)
 {
 	struct uib_hub_priv *hub = container_of(early_s, struct uib_hub_priv, early_suspend);
 	unsigned char status = 0xff;
+	extern void request_host_on(void);
 
 	// clear cfgActive bit in status register to resume operation
 	// after reset
@@ -111,6 +112,9 @@ static void uibhub_late_resume(struct early_suspend *early_s)
 
 	hub_i2c_read(hub->client, STATUS_REG, &status);
 	dev_info(&hub->client->dev, "%s: status = %x\n", __func__, status);
+
+	msleep(5);
+	request_host_on();
 }
 static void uibhub_early_suspend(struct early_suspend *early_s)
 {
