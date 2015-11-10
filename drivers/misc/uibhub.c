@@ -115,11 +115,13 @@ static void uibhub_late_resume(struct early_suspend *early_s)
 static void uibhub_early_suspend(struct early_suspend *early_s)
 {
 	struct uib_hub_priv *hub = container_of(early_s, struct uib_hub_priv, early_suspend);
-	unsigned int *HUB_gpios = (unsigned int *) hub->client->dev.platform_data;
 	unsigned char status = 0xff;
 
 /* moved reset code to S3 interrupt handler so it can be deferred until the fiery goes to sleep
    instead of when android goes to sleep
+
+	unsigned int *HUB_gpios = (unsigned int *) hub->client->dev.platform_data;
+
 	// reset hub to put into lower power mode
 	gpio_set_value(HUB_gpios[0], 0);
 	mdelay(5);
