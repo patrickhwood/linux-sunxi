@@ -1380,6 +1380,7 @@ static void __init mx6_sabresd_board_init(void)
 
 #ifdef CONFIG_MX6DL_UIB_REV_2
 	gpio_request(UIB_USB_HUB_RESET, "HUB-RESET");
+	gpio_direction_output(UIB_USB_HUB_RESET, 1);
 #endif
 
 	i2c_register_board_info(0, mxc_i2c0_board_info,
