@@ -1058,8 +1058,6 @@ static void s3_suspend_callback(struct alarm *alarm)
 
 static void s3_timer_callback(struct alarm *alarm)
 {
-	extern void request_suspend_state(suspend_state_t state);
-
 	printk("s3_timer_callback called at %llu\n", ktime_to_ns(ktime_get()));
 	enable_irq(s3irq);
 	if(led0_cdev)
@@ -1086,9 +1084,7 @@ static irqreturn_t s3_irq(int irq, void *handle)
 	if (!state) {
 		wake_lock(&s3_wake_lock);
 		request_suspend_state(PM_SUSPEND_ON);
-		input_report_key(wakeup_input, KEY_INFO, 1);
-		input_report_key(wakeup_input, KEY_INFO, 0);
-		input_sync(wakeup_input);
+		wakeup_android();
 	}
 	else {
 		/*
@@ -1114,7 +1110,7 @@ static irqreturn_t s3_irq(int irq, void *handle)
 			   back to 0 (it happens) will be processed in the correct sequence,
 			   allowing the screen and USB hub to be awakened properly at this point.
 		*/
-		
+
 #ifdef CONFIG_MX6DL_UIB_REV_2
 		schedule_work(&s3_work_struct);
 
@@ -1132,12 +1128,10 @@ static irqreturn_t s3_irq(int irq, void *handle)
 		gpio_set_value(UIB_USB_HUB_RESET, 1);
 		mdelay(5);
 #endif
-		alarm_init(&s3_suspend, ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP, s3_suspend_callback);
 		alarmtime = ktime_add_ns(alarm_get_elapsed_realtime(), (u64) s3_timeout * 1000 * 1000 / 2);
 		printk("setting s3_suspend to fire in %ums\n", s3_timeout / 2);
 		alarm_start_range(&s3_suspend, alarmtime, alarmtime);
 
-		alarm_init(&s3_timer, ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP, s3_timer_callback);
 		alarmtime = ktime_add_ns(alarm_get_elapsed_realtime(), (u64) s3_timeout * 1000 * 1000);
 		printk("setting s3_timeout to fire in %ums\n", s3_timeout);
 		alarm_start_range(&s3_timer, alarmtime, alarmtime);
@@ -1165,6 +1159,9 @@ static int __init s3_irq_init(void)
 	int irq;
 	struct device *dev;
 	spinlock_t lock;
+
+	alarm_init(&s3_suspend, ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP, s3_suspend_callback);
+	alarm_init(&s3_timer, ANDROID_ALARM_ELAPSED_REALTIME_WAKEUP, s3_timer_callback);
 
 	wakeup_input = input_allocate_device();
 	if (!wakeup_input) {
