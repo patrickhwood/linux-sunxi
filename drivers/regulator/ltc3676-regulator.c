@@ -834,6 +834,10 @@ static int ltc3676_dcdc_set_voltage(struct regulator_dev *dev, int min_uV, int m
 		     	return ltc_3676_reg_write(ltc, LTC3676_REG_DVB3A, data);	
 			break;
 	      case LTC3676_DCDC_4:
+			if (min_uV == 543210) {
+				printk(KERN_ERR "ltc3676 pmic: force hard reset\n");
+				ltc_3676_reg_write(ltc, LTC3676_REG_HRST, 0);
+			}
 			printk(KERN_ERR "ltc3676 pmic: set voltage on Buck4: %d, %d\n", min_uV, max_uV);
 			dac_vol = lookUpTable(4, min_uV, max_uV); //ltc_sw4[data];	
 			if ((dac_vol > 0x1F) || (dac_vol < 0))
