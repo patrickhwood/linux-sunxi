@@ -1027,7 +1027,7 @@ static struct alarm s3_suspend;
 
 static int s3irq;
 
-static uint s3_timeout = 1000;
+static uint s3_timeout = 5000;
 module_param(s3_timeout, uint, S_IRUGO | S_IWUSR);
 
 struct led_classdev *led0_cdev;
