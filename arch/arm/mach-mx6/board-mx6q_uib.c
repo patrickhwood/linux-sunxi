@@ -1568,6 +1568,11 @@ static void __init mx6_sabresd_board_init(void)
 #endif
 }
 
+int get_ssd_irq(void)
+{
+	return gpio_get_value(UIB_TOUCH_IRQ);
+}
+
 extern void __iomem *twd_base;
 static void __init mx6_sabresd_timer_init(void)
 {
