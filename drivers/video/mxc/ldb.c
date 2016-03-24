@@ -129,10 +129,10 @@ static struct fb_videomode ldb_modedb[] = {
 	 FB_MODE_IS_DETAILED,},
 	{
 	 "LDB-WSVGA", 60, 1024, 600, 19531,
-	 100, 100,
-	 10, 10,
-	 120, 15,
-	 FB_SYNC_EXT,
+	 80, 80,
+	 6, 6,
+	 160, 23,
+	 FB_SYNC_EXT | FB_SYNC_HOR_HIGH_ACT | FB_SYNC_VERT_HIGH_ACT,
 	 FB_VMODE_NONINTERLACED,
 	 0,},
 };
