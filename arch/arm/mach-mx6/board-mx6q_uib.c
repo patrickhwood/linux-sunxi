@@ -658,12 +658,12 @@ static void sabresd_suspend_exit(void)
 	/* enable LCD */
 	gpio_set_value(UIB_LVDS_EN, 1);
 #ifdef CONFIG_MX6DL_UIB_REV_2
-	gpio_set_value(UIB_LCD_PWR_INH, board_version == 1 ? 1 : 0);
-	gpio_set_value(UIB_LCD_STBYB, 1);
+	//gpio_set_value(UIB_LCD_PWR_INH, board_version == 1 ? 1 : 0);
+	//gpio_set_value(UIB_LCD_STBYB, 1);
 	/* reset LCD */
-	gpio_set_value(UIB_LCD_RESET, 0);
-	mdelay(1);
-	gpio_set_value(UIB_LCD_RESET, 1);
+	//gpio_set_value(UIB_LCD_RESET, 0);
+	//mdelay(1);
+	//gpio_set_value(UIB_LCD_RESET, 1);
 #endif
 }
 static const struct pm_platform_data mx6q_sabresd_pm_data __initconst = {
