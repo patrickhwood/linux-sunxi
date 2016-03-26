@@ -470,6 +470,12 @@ static enum hrtimer_restart ssd_ts_timer(struct hrtimer *timer)
 #endif
 
 #ifdef CONFIG_HAS_EARLYSUSPEND
+
+#define UIB_LCD_LED_EN          IMX_GPIO_NR(7, 12)
+#define UIB_LCD_PWR_INH IMX_GPIO_NR(3, 20)
+#define UIB_LCD_STBYB IMX_GPIO_NR(3, 25)
+#define UIB_LCD_RESET IMX_GPIO_NR(3, 27)
+
 static void ssd2543_ts_late_resume(struct early_suspend *early_s)
 {
 	unsigned char buf[4]={0};
@@ -477,6 +483,14 @@ static void ssd2543_ts_late_resume(struct early_suspend *early_s)
 	struct ssl_ts_priv *ts = container_of(early_s, struct ssl_ts_priv, early_suspend);
 
 	dev_info(&ts->client->dev, "%s\n", __func__);
+
+#ifdef CONFIG_MX6DL_UIB_REV_2
+	// power up LCD panel
+	gpio_set_value(UIB_LCD_PWR_INH, 0);
+	gpio_set_value(UIB_LCD_STBYB, 1);
+	msleep(135);
+	gpio_set_value(UIB_LCD_LED_EN, 1);
+#endif
 
 	disable_irq_wake(ts->irq);
 
@@ -496,6 +510,13 @@ static void ssd2543_ts_early_suspend(struct early_suspend *early_s)
 
 	dev_info(&ts->client->dev, "%s\n", __func__);
 	ts->suspended = true;
+
+#ifdef CONFIG_MX6DL_UIB_REV_2
+	// power off LCD panel
+	gpio_set_value(UIB_LCD_LED_EN, 0);
+	gpio_set_value(UIB_LCD_PWR_INH, 1);
+	gpio_set_value(UIB_LCD_STBYB, 0);
+#endif
 
 	// write Suspend commands to touch IIC
 	for (i = 0; i < sizeof(Suspend)/sizeof(Suspend[0]); i++)

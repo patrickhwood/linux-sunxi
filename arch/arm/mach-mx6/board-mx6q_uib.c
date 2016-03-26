@@ -91,7 +91,7 @@
 
 #include <../drivers/leds/leds.h>
 
-#define UIB_LVDS_EN			IMX_GPIO_NR(7, 12)
+#define UIB_LCD_LED_EN			IMX_GPIO_NR(7, 12)
 #ifdef CONFIG_MX6DL_UIB_REV_1
  #define UIB_LCD_CNTRL_VGH	IMX_GPIO_NR(2, 10)
 #else
@@ -640,13 +640,6 @@ static void sabresd_suspend_enter(void)
 	/* suspend preparation */
 	/* disable RFID */
 	gpio_set_value(UIB_RFID_EN, 0);
-
-	/* disable LCD */
-	// gpio_set_value(UIB_LVDS_EN, 0);
-#ifdef CONFIG_MX6DL_UIB_REV_2
-	// gpio_set_value(UIB_LCD_PWR_INH, board_version == 1 ? 0 : 1);
-	// gpio_set_value(UIB_LCD_STBYB, 0);
-#endif
 }
 
 static void sabresd_suspend_exit(void)
@@ -654,17 +647,6 @@ static void sabresd_suspend_exit(void)
 	/* resume restore */
 	/* enable RFID */
 	gpio_set_value(UIB_RFID_EN, 1);
-
-	/* enable LCD */
-	gpio_set_value(UIB_LVDS_EN, 1);
-#ifdef CONFIG_MX6DL_UIB_REV_2
-	//gpio_set_value(UIB_LCD_PWR_INH, board_version == 1 ? 1 : 0);
-	//gpio_set_value(UIB_LCD_STBYB, 1);
-	/* reset LCD */
-	//gpio_set_value(UIB_LCD_RESET, 0);
-	//mdelay(1);
-	//gpio_set_value(UIB_LCD_RESET, 1);
-#endif
 }
 static const struct pm_platform_data mx6q_sabresd_pm_data __initconst = {
 	.name = "imx_pm",
@@ -1287,8 +1269,8 @@ static void __init mx6_sabresd_board_init(void)
 	gpio_direction_output(UIB_LCD_RESET, 1);
 #endif
 
-	gpio_request(UIB_LVDS_EN, "LVDS_EN");
-	gpio_direction_output(UIB_LVDS_EN, 1);
+	gpio_request(UIB_LCD_LED_EN, "LCD_LED_EN");
+	gpio_direction_output(UIB_LCD_LED_EN, 1);
 
 #ifdef CONFIG_FEC_1588
 	/* Set GPIO_16 input for IEEE-1588 ts_clk and RMII reference clock
