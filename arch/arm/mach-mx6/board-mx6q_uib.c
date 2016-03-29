@@ -1042,8 +1042,10 @@ static void s3_timer_callback(struct alarm *alarm)
 {
 	printk("s3_timer_callback called at %llu\n", ktime_to_ns(ktime_get()));
 	enable_irq(s3irq);
+	// power down LED backlight
 	if(led0_cdev)
 		led_set_brightness(led0_cdev, LED_OFF);
+	gpio_set_value(UIB_LCD_LED_EN, 0);
 }
 
 // IRQ handler

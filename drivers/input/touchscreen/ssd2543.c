@@ -513,7 +513,6 @@ static void ssd2543_ts_early_suspend(struct early_suspend *early_s)
 
 #ifdef CONFIG_MX6DL_UIB_REV_2
 	// power off LCD panel
-	gpio_set_value(UIB_LCD_LED_EN, 0);
 	gpio_set_value(UIB_LCD_PWR_INH, 1);
 	gpio_set_value(UIB_LCD_STBYB, 0);
 #endif
