@@ -536,7 +536,12 @@ static void esdhc_writew_le(struct sdhci_host *host, u16 val, int reg)
 			return;
 
 		if (val & SDHCI_CTRL_UHS_DDR50)
-			writel((boarddata->delay_line \
+			/*
+			  The delay specified in the DLL control register is off by 1,
+			  where a value of 0 means 1 unit of delay. So to get the actual
+			  delay of delay_line we have to subtract 1.
+			*/
+			writel(((boarddata->delay_line-1) \
 					<< SDHCI_DLL_OVERRIDE_OFFSET) \
 					| (1 << SDHCI_DLL_OVERRIDE_EN_OFFSET),
 					host->ioaddr + SDHCI_DLL_CTRL);

@@ -63,7 +63,8 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_SD2_DAT2__USDHC2_DAT2,
 	MX6DL_PAD_SD2_DAT3__USDHC2_DAT3,
 
-	/* USDHC3 */
+#if 0 // let uboot set up the pads for this device
+	/* USDHC3/eMMC */
 	MX6DL_PAD_SD3_CLK__USDHC3_CLK_50MHZ,
 	MX6DL_PAD_SD3_CMD__USDHC3_CMD_50MHZ,
 	MX6DL_PAD_SD3_DAT0__USDHC3_DAT0_50MHZ,
@@ -75,6 +76,7 @@ static iomux_v3_cfg_t mx6dl_sabresd_pads[] = {
 	MX6DL_PAD_SD3_DAT6__USDHC3_DAT6_50MHZ,
 	MX6DL_PAD_SD3_DAT7__USDHC3_DAT7_50MHZ,
 	MX6DL_PAD_SD3_RST__USDHC3_RST,
+#endif
 
 	/* info/wake */
 	MX6DL_PAD_EIM_D29__GPIO_3_29,
