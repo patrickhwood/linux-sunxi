@@ -315,6 +315,10 @@ static struct i2c_board_info mxc_i2c0_board_info[] __initdata = {
 		I2C_BOARD_INFO("uibhub", 0x40),
 		.platform_data = HUB_platform_data,
 	},
+	{
+		I2C_BOARD_INFO("uibhub", 0x44),
+		.platform_data = HUB_platform_data,
+	},
 #endif
 };
 

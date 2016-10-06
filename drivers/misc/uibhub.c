@@ -18,7 +18,6 @@
 #endif
 #include <mach/hardware.h>
 
-#define DEVICE_ADDR        0x40
 #define VENDOR_ID_LSB      0x01
 #define VENDOR_ID_MSB      0x02
 #define PRODUCT_ID_LSB     0x03
@@ -170,6 +169,7 @@ static int uibhub_probe(struct i2c_client *client,
 		goto err_free_mem;
 	}
 	if (buf[0] != 0x51) {
+		dev_err(&client->dev, "%s: vendor ID lsb %x mismatch\n", __func__, buf[0]);
 		err = -ENODEV;
 		goto err_free_mem;
 	}
@@ -179,6 +179,7 @@ static int uibhub_probe(struct i2c_client *client,
 		goto err_free_mem;
 	}
 	if (buf[1] != 0x04) {
+		dev_err(&client->dev, "%s: vendor ID msb %x mismatch\n", __func__, buf[1]);
 		err = -ENODEV;
 		goto err_free_mem;
 	}
@@ -188,7 +189,8 @@ static int uibhub_probe(struct i2c_client *client,
 		err = -EIO;
 		goto err_free_mem;
 	}
-	if (buf[2] != 0x46) {
+	if (buf[2] != 0x46 && buf[2] != 0x40) {
+		dev_err(&client->dev, "%s: product ID lsb %x mismatch\n", __func__, buf[2]);
 		err = -ENODEV;
 		goto err_free_mem;
 	}
@@ -197,7 +199,8 @@ static int uibhub_probe(struct i2c_client *client,
 		err = -EIO;
 		goto err_free_mem;
 	}
-	if (buf[3] != 0x80) {
+	if (buf[3] != 0x80 && buf[3] != 0x81) {
+		dev_err(&client->dev, "%s: product ID msb %x, mismatch\n", __func__, buf[3]);
 		err = -ENODEV;
 		goto err_free_mem;
 	}
