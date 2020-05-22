@@ -67,6 +67,8 @@ module_param(disable, uint, S_IRUGO);
 // keep most recent instance of SSD touchpanel I2C client device around
 static struct i2c_client *ssd_i2c_client;
 
+#define delay(ms) {2, 0xFF, ms>>8, ms&0xFF}
+
 struct ChipSetting
 {
 	char No;
